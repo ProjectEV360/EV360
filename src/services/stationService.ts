@@ -126,6 +126,7 @@ export async function geocode(query: string): Promise<{ lat: number; lng: number
   const res = await fetch(url, { headers: { Accept: "application/json" } });
   if (!res.ok) throw new Error("Search failed");
   const json = (await res.json()) as Array<{ lat: string; lon: string; display_name: string }>;
-  if (!json.length) return null;
-  return { lat: Number(json[0].lat), lng: Number(json[0].lon), label: json[0].display_name };
+  const first = json[0];
+  if (!first) return null;
+  return { lat: Number(first.lat), lng: Number(first.lon), label: first.display_name };
 }
