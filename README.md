@@ -45,7 +45,6 @@ VITE_GOOGLE_MAPS_API_KEY="AIzaSy..."
 VITE_RAZORPAY_KEY_ID="rzp_test_..."
 ```
 
-
 ## Data Model
 
 The Supabase database has seven tables. RLS is enabled on all user-scoped tables so each user can only access their own data.

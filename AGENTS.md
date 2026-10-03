@@ -1,12 +1,10 @@
-<!-- LOVABLE:BEGIN -->
+# ChargeHub Developer Guidelines
 
-> [!IMPORTANT]
-> This project is connected to [Lovable](https://lovable.dev). Avoid rewriting
-> published git history — force pushing, or rebasing/amending/squashing commits
-> that are already pushed — as it rewrites history on Lovable's side and the
-> user will likely lose their project history.
->
-> Commits you push to the connected branch sync back to Lovable and show up in
-> the editor, so keep the branch in a working state.
+This repository contains ChargeHub, an EV charging station locator and slot reservation web application built with React, TanStack Start, Tailwind CSS, Supabase, Google Maps, and Razorpay.
 
-<!-- LOVABLE:END -->
+## Development Workflow
+
+- **Package Manager**: npm (`npm install`, `npm run dev`, `npm run build`, `npm run test`)
+- **Formatting**: `npm run format`
+- **Linting**: `npm run lint`
+- **Testing**: `npm run test`
