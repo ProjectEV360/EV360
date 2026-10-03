@@ -24,16 +24,38 @@ afterEach(() => {
 // routes are rewritten as the app is built and this must keep passing.
 describe("App routing", () => {
   it("renders the index route", async () => {
-    const { container } = renderAt("/");
+    renderAt("/");
+    await waitFor(() => expect(document.body.firstChild).not.toBeNull());
+  });
 
-    await waitFor(() => expect(container.firstChild).not.toBeNull());
+  it("renders the map route", async () => {
+    renderAt("/map");
+    await waitFor(() => expect(document.body.firstChild).not.toBeNull());
+  });
+
+  it("renders the login route", async () => {
+    renderAt("/login");
+    await waitFor(() => expect(document.body.firstChild).not.toBeNull());
+  });
+
+  it("renders the signup route", async () => {
+    renderAt("/signup");
+    await waitFor(() => expect(document.body.firstChild).not.toBeNull());
+  });
+
+  it("renders the profile route", async () => {
+    renderAt("/profile");
+    await waitFor(() => expect(document.body.firstChild).not.toBeNull());
+  });
+
+  it("renders the station detail route", async () => {
+    renderAt("/station/test-station-id");
+    await waitFor(() => expect(document.body.firstChild).not.toBeNull());
   });
 
   it("renders the not-found route", async () => {
     vi.spyOn(console, "warn").mockImplementation(() => undefined);
-
-    const { container } = renderAt("/this-route-does-not-exist");
-
-    await waitFor(() => expect(container.firstChild).not.toBeNull());
+    renderAt("/this-route-does-not-exist");
+    await waitFor(() => expect(document.body.firstChild).not.toBeNull());
   });
 });

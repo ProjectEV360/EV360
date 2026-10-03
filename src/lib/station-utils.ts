@@ -33,8 +33,9 @@ export function connectorMatches(c: Connector, f: StationFilters) {
 
 export function filterStations(stations: Station[], f: StationFilters) {
   return stations.filter((s) => {
-    if (f.operatorIds.length && !f.operatorIds.includes(s.operator.id)) return false;
-    return s.connectors.some((c) => connectorMatches(c, f));
+    if (f.operatorIds.length && (!s.operator || !f.operatorIds.includes(s.operator.id)))
+      return false;
+    return s.connectors?.some((c) => connectorMatches(c, f)) ?? false;
   });
 }
 

@@ -72,7 +72,10 @@ export async function reportIssue(stationId: string, description: string, userId
 // ---- User-scoped (RLS restricts to the signed-in user) ----
 
 export async function getFavouriteIds(userId: string): Promise<string[]> {
-  const { data, error } = await supabase.from("favourites").select("station_id").eq("user_id", userId);
+  const { data, error } = await supabase
+    .from("favourites")
+    .select("station_id")
+    .eq("user_id", userId);
   if (error) throw error;
   return (data ?? []).map((f) => f.station_id);
 }
@@ -86,7 +89,9 @@ export async function getFavouriteStations(userId: string): Promise<Station[]> {
 }
 
 export async function addFavourite(userId: string, stationId: string) {
-  const { error } = await supabase.from("favourites").insert({ user_id: userId, station_id: stationId });
+  const { error } = await supabase
+    .from("favourites")
+    .insert({ user_id: userId, station_id: stationId });
   if (error) throw error;
 }
 
@@ -121,7 +126,9 @@ export async function saveProfile(p: Profile) {
 }
 
 // ---- Geocoding (OpenStreetMap Nominatim, no key) ----
-export async function geocode(query: string): Promise<{ lat: number; lng: number; label: string } | null> {
+export async function geocode(
+  query: string,
+): Promise<{ lat: number; lng: number; label: string } | null> {
   const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=in&q=${encodeURIComponent(query)}`;
   const res = await fetch(url, { headers: { Accept: "application/json" } });
   if (!res.ok) throw new Error("Search failed");
