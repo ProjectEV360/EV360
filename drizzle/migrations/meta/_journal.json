@@ -8,6 +8,13 @@
       "when": 1791002350192,
       "tag": "0000_chargehub_schema",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791002428114,
+      "tag": "0001_chargehub_seed",
+      "breakpoints": true
     }
   ]
 }
