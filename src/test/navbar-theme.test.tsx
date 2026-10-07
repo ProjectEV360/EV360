@@ -66,8 +66,7 @@ describe("Navbar component", () => {
     mockUser.mockReturnValue(null);
     render(<Navbar />);
 
-    expect(screen.getByText(/Charge/)).toBeInTheDocument();
-    expect(screen.getByText("Hub")).toBeInTheDocument();
+    expect(screen.getAllByAltText(/EV360/i)[0]).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Home/i })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Map/i })).toBeInTheDocument();
     expect(screen.getByText("Sign In")).toBeInTheDocument();

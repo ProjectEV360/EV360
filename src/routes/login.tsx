@@ -62,13 +62,17 @@ function LoginPage() {
 
       <div className="relative z-10 w-full max-w-md">
         {/* Logo */}
-        <Link to="/" className="mb-8 flex items-center justify-center gap-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-primary shadow-glow">
-            <Zap className="h-5 w-5 text-primary-foreground" />
-          </div>
-          <span className="font-display text-2xl font-bold">
-            Charge<span className="text-gradient">Hub</span>
-          </span>
+        <Link to="/" className="mb-8 flex items-center justify-center" aria-label="EV360 Home">
+          <img
+            src="/logo.png"
+            alt="EV360 - One App. Every Charger."
+            className="h-12 w-auto max-w-[200px] object-contain dark:hidden"
+          />
+          <img
+            src="/logo-dark.png"
+            alt="EV360 - One App. Every Charger."
+            className="hidden h-12 w-auto max-w-[200px] object-contain dark:block"
+          />
         </Link>
 
         <div className="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-card">

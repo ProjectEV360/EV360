@@ -22,13 +22,17 @@ export function Navbar() {
     <header className="fixed inset-x-0 top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
       <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-2 group" id="nav-logo">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-primary shadow-glow transition-transform group-hover:scale-110">
-            <Zap className="h-5 w-5 text-primary-foreground" />
-          </div>
-          <span className="font-display text-xl font-bold tracking-tight">
-            Charge<span className="text-gradient">Hub</span>
-          </span>
+        <Link to="/" className="flex items-center group py-1" id="nav-logo" aria-label="EV360 Home">
+          <img
+            src="/logo.png"
+            alt="EV360 - One App. Every Charger."
+            className="h-9 w-auto max-w-[150px] object-contain transition-transform group-hover:scale-105 dark:hidden"
+          />
+          <img
+            src="/logo-dark.png"
+            alt="EV360 - One App. Every Charger."
+            className="hidden h-9 w-auto max-w-[150px] object-contain transition-transform group-hover:scale-105 dark:block"
+          />
         </Link>
 
         {/* Desktop Nav */}

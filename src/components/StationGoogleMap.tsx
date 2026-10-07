@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Loader } from "@googlemaps/js-api-loader";
+import { importLibrary, setOptions } from "@googlemaps/js-api-loader";
 import { MapPin, Key, Layers, AlertCircle, Loader2, ExternalLink } from "lucide-react";
 import type { Station } from "@/lib/types";
 import { stationStatus, getDirectionsUrl } from "@/lib/station-utils";
@@ -9,13 +9,13 @@ import { getStoredGoogleKey } from "@/lib/map-config";
 
 interface StationGoogleMapProps {
   stations: Station[];
-  center?: [number, number];
-  zoom?: number;
-  selectedId?: string | null;
-  onSelect?: (id: string) => void;
-  className?: string;
-  onFallbackToOSM?: () => void;
-  userLocation?: { lat: number; lng: number } | null;
+  center?: [number, number] | undefined;
+  zoom?: number | undefined;
+  selectedId?: string | null | undefined;
+  onSelect?: ((id: string) => void) | undefined;
+  className?: string | undefined;
+  onFallbackToOSM?: (() => void) | undefined;
+  userLocation?: { lat: number; lng: number } | null | undefined;
 }
 
 // Google Maps Dark Theme Styles
@@ -140,15 +140,17 @@ export function StationGoogleMap({
     }
 
     let isMounted = true;
-    const loader = new Loader({
-      apiKey,
-      version: "weekly",
-      libraries: ["places"],
-    });
+    try {
+      setOptions({
+        key: apiKey,
+        v: "weekly",
+      });
+    } catch {
+      // Ignore if setOptions was already called
+    }
 
-    loader
-      .load()
-      .then((google) => {
+    Promise.all([importLibrary("maps"), importLibrary("marker")])
+      .then(() => {
         if (!isMounted || !containerRef.current) return;
 
         const map = new google.maps.Map(containerRef.current, {
@@ -165,7 +167,7 @@ export function StationGoogleMap({
         mapInstanceRef.current = map;
         setIsLoading(false);
       })
-      .catch((err) => {
+      .catch((err: unknown) => {
         if (isMounted) {
           console.error("Google Maps load error:", err);
           setLoadError(
@@ -225,7 +227,7 @@ export function StationGoogleMap({
           anchor: isSelected ? new google.maps.Point(21, 50) : new google.maps.Point(16, 40),
         },
         zIndex: isSelected ? 999 : 1,
-        animation: isSelected ? google.maps.Animation.BOUNCE : undefined,
+        animation: isSelected ? google.maps.Animation.BOUNCE : null,
       });
 
       marker.addListener("click", () => {

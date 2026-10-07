@@ -220,13 +220,16 @@ function LandingPage() {
       <footer className="border-t border-border/50 bg-card/50">
         <div className="mx-auto flex max-w-7xl flex-col items-center gap-4 px-4 py-8 sm:flex-row sm:justify-between sm:px-6 lg:px-8">
           <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-primary">
-              <Zap className="h-4 w-4 text-primary-foreground" />
-            </div>
-            <span className="font-display text-sm font-bold">ChargeHub</span>
+            <img src="/logo.png" alt="EV360" className="h-7 w-auto object-contain dark:hidden" />
+            <img
+              src="/logo-dark.png"
+              alt="EV360"
+              className="hidden h-7 w-auto object-contain dark:block"
+            />
           </div>
           <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} ChargeHub. Built for India's EV revolution.
+            © {new Date().getFullYear()} EV360. One App. Every Charger. Built for India's EV
+            revolution.
           </p>
         </div>
       </footer>

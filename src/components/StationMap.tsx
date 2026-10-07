@@ -22,14 +22,14 @@ L.Icon.Default.mergeOptions({
 
 interface StationMapProps {
   stations: Station[];
-  center?: [number, number];
-  zoom?: number;
-  selectedId?: string | null;
-  onSelect?: (id: string) => void;
-  className?: string;
-  userLocation?: { lat: number; lng: number } | null;
-  onLocateMe?: () => void;
-  isLocating?: boolean;
+  center?: [number, number] | undefined;
+  zoom?: number | undefined;
+  selectedId?: string | null | undefined;
+  onSelect?: ((id: string) => void) | undefined;
+  className?: string | undefined;
+  userLocation?: { lat: number; lng: number } | null | undefined;
+  onLocateMe?: (() => void) | undefined;
+  isLocating?: boolean | undefined;
 }
 
 export function StationMap({

@@ -97,7 +97,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
     links: [
       ...(appCss ? [{ rel: "stylesheet", href: appCss }] : []),
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "icon", href: "/favicon.ico?v=2", type: "image/x-icon" },
+      { rel: "icon", href: "/favicon.png?v=2", type: "image/png" },
+      { rel: "apple-touch-icon", href: "/apple-touch-icon.png?v=2" },
       {
         rel: "stylesheet",
         href: "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css",
