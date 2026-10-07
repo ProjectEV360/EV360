@@ -222,3 +222,65 @@
 .dark .leaflet-tile-pane {
   filter: invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.9);
 }
+
+/* User location marker with radar pulse */
+.ch-user-location-wrapper {
+  background: transparent !important;
+  border: none !important;
+}
+.ch-user-location {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ch-user-location-dot {
+  width: 14px;
+  height: 14px;
+  background-color: #2563eb;
+  border: 2.5px solid #ffffff;
+  border-radius: 9999px;
+  box-shadow:
+    0 0 10px rgba(37, 99, 235, 0.8),
+    0 2px 5px rgba(0, 0, 0, 0.35);
+  z-index: 2;
+  position: relative;
+}
+.ch-user-location-pulse {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  background-color: rgba(37, 99, 235, 0.45);
+  animation: ch-user-pulse 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+  z-index: 1;
+  pointer-events: none;
+}
+@keyframes ch-user-pulse {
+  0% {
+    width: 14px;
+    height: 14px;
+    opacity: 0.9;
+  }
+  100% {
+    width: 44px;
+    height: 44px;
+    opacity: 0;
+  }
+}
+.ch-location-tooltip {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--card);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 3px 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}

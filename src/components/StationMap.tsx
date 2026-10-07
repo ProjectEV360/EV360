@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import L from "leaflet";
 import "leaflet.markercluster";
-import { Layers, Map as MapIcon, Settings, Key } from "lucide-react";
+import { Layers, Map as MapIcon, Settings, Key, LocateFixed, Loader2 } from "lucide-react";
 import type { Station } from "@/lib/types";
 import { stationStatus } from "@/lib/station-utils";
 import { StationGoogleMap } from "./StationGoogleMap";
@@ -27,6 +27,9 @@ interface StationMapProps {
   selectedId?: string | null;
   onSelect?: (id: string) => void;
   className?: string;
+  userLocation?: { lat: number; lng: number } | null;
+  onLocateMe?: () => void;
+  isLocating?: boolean;
 }
 
 export function StationMap({
@@ -36,6 +39,9 @@ export function StationMap({
   selectedId,
   onSelect,
   className = "",
+  userLocation,
+  onLocateMe,
+  isLocating = false,
 }: StationMapProps) {
   // Map Provider State: 'google' | 'osm'
   const [provider, setProvider] = useState<"google" | "osm">(() => {
@@ -55,6 +61,8 @@ export function StationMap({
   const mapRef = useRef<L.Map | null>(null);
   const clusterRef = useRef<L.MarkerClusterGroup | null>(null);
   const markersRef = useRef<Map<string, L.Marker>>(new Map());
+  const userMarkerRef = useRef<L.Marker | null>(null);
+  const userCircleRef = useRef<L.Circle | null>(null);
 
   const switchProvider = (next: "google" | "osm") => {
     setProvider(next);
@@ -88,6 +96,14 @@ export function StationMap({
       maxZoom: 19,
     }).addTo(map);
 
+    // Responsive resize observer to keep Leaflet synchronized with container size changes
+    const resizeObserver = new ResizeObserver(() => {
+      map.invalidateSize();
+    });
+    if (containerRef.current) {
+      resizeObserver.observe(containerRef.current);
+    }
+
     const cluster = L.markerClusterGroup({
       maxClusterRadius: 50,
       iconCreateFunction: (c) => {
@@ -106,6 +122,15 @@ export function StationMap({
     clusterRef.current = cluster;
 
     return () => {
+      resizeObserver.disconnect();
+      if (userMarkerRef.current) {
+        userMarkerRef.current.remove();
+        userMarkerRef.current = null;
+      }
+      if (userCircleRef.current) {
+        userCircleRef.current.remove();
+        userCircleRef.current = null;
+      }
       map.remove();
       mapRef.current = null;
       clusterRef.current = null;
@@ -139,6 +164,67 @@ export function StationMap({
     });
   }, [stations, selectedId, onSelect, provider]);
 
+  // Sync Leaflet user location marker
+  useEffect(() => {
+    if (provider !== "osm" || !mapRef.current) return;
+
+    if (!userLocation) {
+      if (userMarkerRef.current) {
+        userMarkerRef.current.remove();
+        userMarkerRef.current = null;
+      }
+      if (userCircleRef.current) {
+        userCircleRef.current.remove();
+        userCircleRef.current = null;
+      }
+      return;
+    }
+
+    const latLng: [number, number] = [userLocation.lat, userLocation.lng];
+
+    if (!userMarkerRef.current) {
+      const userIcon = L.divIcon({
+        className: "ch-user-location-wrapper",
+        html: `
+          <div class="ch-user-location">
+            <div class="ch-user-location-pulse"></div>
+            <div class="ch-user-location-dot"></div>
+          </div>
+        `,
+        iconSize: [24, 24],
+        iconAnchor: [12, 12],
+      });
+
+      const marker = L.marker(latLng, {
+        icon: userIcon,
+        zIndexOffset: 1000,
+      }).addTo(mapRef.current);
+
+      marker.bindTooltip("You are here", {
+        direction: "top",
+        offset: [0, -12],
+        className: "ch-location-tooltip",
+      });
+
+      const circle = L.circle(latLng, {
+        radius: 120,
+        color: "#2563eb",
+        weight: 1.5,
+        opacity: 0.35,
+        fillColor: "#3b82f6",
+        fillOpacity: 0.1,
+      }).addTo(mapRef.current);
+
+      userMarkerRef.current = marker;
+      userCircleRef.current = circle;
+    } else {
+      userMarkerRef.current.setLatLng(latLng);
+      if (userCircleRef.current) {
+        userCircleRef.current.setLatLng(latLng);
+      }
+    }
+  }, [userLocation, provider]);
+
   // Leaflet Fly to selected
   useEffect(() => {
     if (provider !== "osm") return;
@@ -150,16 +236,45 @@ export function StationMap({
     }
   }, [selectedId, provider]);
 
+  const centerLat = center?.[0];
+  const centerLng = center?.[1];
+
   // Leaflet Fly to center if center prop changes
   useEffect(() => {
     if (provider !== "osm" || !mapRef.current || !center) return;
     mapRef.current.flyTo(center, zoom ?? 13, { duration: 0.8 });
-  }, [center, zoom, provider]);
+  }, [centerLat, centerLng, center, zoom, provider]);
 
   return (
     <div className="relative h-full w-full">
-      {/* Floating Provider Switcher Pill */}
+      {/* Floating Provider Switcher & Locate Pill */}
       <div className="absolute top-3 right-3 z-[1000] flex items-center gap-1 rounded-full border border-border/60 bg-card/90 p-1 shadow-card backdrop-blur-md">
+        {onLocateMe && (
+          <>
+            <button
+              id="map-locate-btn"
+              type="button"
+              onClick={() => {
+                if (userLocation && mapRef.current) {
+                  mapRef.current.flyTo([userLocation.lat, userLocation.lng], 14, { duration: 0.8 });
+                }
+                onLocateMe();
+              }}
+              disabled={isLocating}
+              title={userLocation ? "Center on my location" : "Find my current location"}
+              className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold text-primary transition-all hover:bg-primary/10 active:scale-95 disabled:opacity-50"
+            >
+              {isLocating ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <LocateFixed className="h-3.5 w-3.5" />
+              )}
+              <span className="hidden sm:inline">My Location</span>
+            </button>
+            <div className="h-3.5 w-[1px] bg-border/60 mx-0.5" />
+          </>
+        )}
+
         <button
           id="map-provider-google"
           type="button"
@@ -212,6 +327,7 @@ export function StationMap({
           onSelect={onSelect}
           className={className}
           onFallbackToOSM={() => switchProvider("osm")}
+          userLocation={userLocation}
         />
       ) : (
         <div

@@ -30,12 +30,14 @@ function StatCard({
   label: string;
 }) {
   return (
-    <div className="group flex flex-col items-center rounded-2xl border border-border/60 bg-card p-6 shadow-card transition-all duration-300 hover:shadow-glow hover:-translate-y-1">
-      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 transition-colors group-hover:bg-primary/20">
-        <Icon className="h-6 w-6 text-primary" />
+    <div className="group flex flex-col items-center rounded-2xl border border-border/60 bg-card px-4 py-5 sm:px-5 sm:py-6 lg:px-6 lg:py-7 shadow-card transition-all duration-300 hover:shadow-glow hover:-translate-y-1">
+      <div className="flex h-10 w-10 sm:h-11 sm:w-11 lg:h-12 lg:w-12 items-center justify-center rounded-xl bg-primary/10 transition-colors group-hover:bg-primary/20">
+        <Icon className="h-5 w-5 sm:h-5.5 sm:w-5.5 lg:h-6 lg:w-6 text-primary" />
       </div>
-      <span className="mt-3 font-display text-3xl font-bold text-foreground">{value}</span>
-      <span className="mt-1 text-sm text-muted-foreground">{label}</span>
+      <span className="mt-2.5 sm:mt-3 font-display text-2xl sm:text-3xl lg:text-3xl font-bold text-foreground">
+        {value}
+      </span>
+      <span className="mt-0.5 sm:mt-1 text-xs sm:text-sm text-muted-foreground">{label}</span>
     </div>
   );
 }
@@ -126,7 +128,7 @@ function LandingPage() {
 
       {/* Stats */}
       <section className="relative z-10 -mt-8 px-4 sm:px-6 lg:px-8">
-        <div className="mx-auto grid max-w-4xl grid-cols-2 gap-4 lg:grid-cols-4">
+        <div className="mx-auto grid max-w-5xl grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4 lg:gap-5 xl:gap-6">
           <StatCard icon={MapPin} value={String(totalStations)} label="Stations" />
           <StatCard icon={Plug} value={String(totalConnectors)} label="Connectors" />
           <StatCard icon={Battery} value={String(availableNow)} label="Available Now" />

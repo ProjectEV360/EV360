@@ -1,8 +1,15 @@
 import { Link } from "@tanstack/react-router";
-import { Zap, MapPin, Clock, Heart, ChevronRight } from "lucide-react";
+import { Zap, MapPin, Clock, Heart, ChevronRight, Navigation } from "lucide-react";
 import type { Station } from "@/lib/types";
-import { stationStatus, maxPower, priceRange, STATUS_LABEL } from "@/lib/station-utils";
+import {
+  stationStatus,
+  maxPower,
+  priceRange,
+  STATUS_LABEL,
+  getDirectionsUrl,
+} from "@/lib/station-utils";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 interface StationCardProps {
   station: Station;
@@ -118,15 +125,33 @@ export function StationCard({ station, isFav, onToggleFav, distance }: StationCa
           </p>
         )}
 
-        {/* View details link */}
-        <Link
-          to="/station/$id"
-          params={{ id: station.id }}
-          className="mt-3 flex items-center gap-1 text-xs font-medium text-primary transition-colors hover:text-primary/80"
-        >
-          View details
-          <ChevronRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
-        </Link>
+        {/* Actions row */}
+        <div className="mt-4 flex items-center gap-3">
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-1 gap-2 rounded-xl text-xs font-medium transition-all hover:bg-primary/10"
+            asChild
+          >
+            <a
+              href={getDirectionsUrl(station.lat, station.lng)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2"
+            >
+              <Navigation className="h-3.5 w-3.5" />
+              Get Directions
+            </a>
+          </Button>
+          <Link
+            to="/station/$id"
+            params={{ id: station.id }}
+            className="flex items-center gap-1 text-xs font-medium text-primary transition-colors hover:text-primary/80"
+          >
+            View details
+            <ChevronRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
+          </Link>
+        </div>
       </div>
     </div>
   );

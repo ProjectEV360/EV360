@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Search, Navigation, Loader2, List, MapIcon, X } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Navbar } from "@/components/Navbar";
@@ -52,7 +52,70 @@ function MapPage() {
   } | null>(null);
   const [mapCenter, setMapCenter] = useState<[number, number] | undefined>();
   const [mapZoom, setMapZoom] = useState<number | undefined>();
+  const [isLocating, setIsLocating] = useState(false);
   const [viewMode, setViewMode] = useState<"map" | "list">("map");
+
+  // Locate user with retry fallback
+  const locateUser = useCallback((showToast = true) => {
+    if (typeof window === "undefined" || !navigator.geolocation) {
+      if (showToast) toast.error("Geolocation is not supported by your browser");
+      return;
+    }
+
+    setIsLocating(true);
+
+    const onSuccess = (pos: GeolocationPosition) => {
+      const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      setUserLocation(loc);
+      setMapCenter([loc.lat, loc.lng]);
+      setMapZoom(14);
+      setIsLocating(false);
+      if (showToast) toast.success("Found your location!");
+    };
+
+    const onError = (err: GeolocationPositionError) => {
+      // If high accuracy times out (common on WiFi/laptops), retry with standard accuracy
+      if (err.code === err.TIMEOUT) {
+        navigator.geolocation.getCurrentPosition(
+          onSuccess,
+          (fallbackErr) => {
+            setIsLocating(false);
+            if (showToast) {
+              if (fallbackErr.code === fallbackErr.PERMISSION_DENIED) {
+                toast.error(
+                  "Location permission denied. Please allow location access in your browser.",
+                );
+              } else {
+                toast.error("Could not get your location.");
+              }
+            }
+          },
+          { enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 },
+        );
+        return;
+      }
+
+      setIsLocating(false);
+      if (showToast) {
+        if (err.code === err.PERMISSION_DENIED) {
+          toast.error("Location permission denied. Please allow location access in your browser.");
+        } else {
+          toast.error("Could not get your location.");
+        }
+      }
+    };
+
+    navigator.geolocation.getCurrentPosition(onSuccess, onError, {
+      enableHighAccuracy: true,
+      timeout: 6000,
+      maximumAge: 60000,
+    });
+  }, []);
+
+  // Attempt auto-locating on initial mount
+  useEffect(() => {
+    locateUser(false);
+  }, [locateUser]);
 
   // Resolve vehicle filter → connector types
   const resolvedFilters = useMemo(() => {
@@ -96,31 +159,12 @@ function MapPage() {
     }
   }, [searchQuery]);
 
-  // Near me handler
-  const handleNearMe = useCallback(() => {
-    if (!navigator.geolocation) {
-      toast.error("Geolocation is not supported");
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        setUserLocation(loc);
-        setMapCenter([loc.lat, loc.lng]);
-        setMapZoom(13);
-        toast.success("Found your location!");
-      },
-      () => toast.error("Could not get your location"),
-      { enableHighAccuracy: true, timeout: 10000 },
-    );
-  }, []);
-
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="flex h-screen max-h-screen overflow-hidden flex-col bg-background">
       <Navbar />
-      <div className="flex flex-1 flex-col pt-16">
+      <div className="flex flex-1 overflow-hidden flex-col pt-16">
         {/* Top bar: search + near me + view toggle */}
-        <div className="border-b border-border/50 bg-card/50 backdrop-blur-sm">
+        <div className="border-b border-border/50 bg-card/50 backdrop-blur-sm shrink-0">
           <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-2 px-4 py-3 sm:px-6 lg:px-8">
             {/* Search */}
             <div className="relative flex-1 min-w-[200px]">
@@ -160,10 +204,15 @@ function MapPage() {
               id="near-me-btn"
               variant="outline"
               size="sm"
-              onClick={handleNearMe}
+              onClick={() => locateUser(true)}
+              disabled={isLocating}
               className="gap-1.5 rounded-full"
             >
-              <Navigation className="h-4 w-4" />
+              {isLocating ? (
+                <Loader2 className="h-4 w-4 animate-spin text-primary" />
+              ) : (
+                <Navigation className="h-4 w-4 text-primary" />
+              )}
               Near Me
             </Button>
 
@@ -224,22 +273,31 @@ function MapPage() {
           </aside>
 
           {/* Map + List */}
-          <div className="relative flex flex-1 flex-col lg:flex-row">
-            {/* Map view */}
-            <div className={`relative flex-1 ${viewMode === "list" ? "hidden lg:block" : ""}`}>
-              {isLoading ? (
-                <div className="flex h-full items-center justify-center">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                </div>
-              ) : (
-                <StationMap
-                  stations={sorted}
-                  center={mapCenter}
-                  zoom={mapZoom}
-                  selectedId={selectedId}
-                  onSelect={(id) => setSelectedId(id)}
-                />
-              )}
+          <div className="relative flex flex-1 overflow-hidden flex-col lg:flex-row min-w-0">
+            {/* Center Map section */}
+            <div
+              className={`relative flex flex-1 min-w-0 min-h-0 flex-col p-3 sm:p-4 lg:p-4.5 xl:p-5 ${
+                viewMode === "list" ? "hidden lg:flex" : "flex"
+              }`}
+            >
+              <div className="relative flex-1 h-full w-full overflow-hidden rounded-2xl lg:rounded-3xl border border-border/70 bg-card shadow-sm z-0 isolate">
+                {isLoading ? (
+                  <div className="flex h-full w-full items-center justify-center">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                ) : (
+                  <StationMap
+                    stations={sorted}
+                    center={mapCenter}
+                    zoom={mapZoom}
+                    selectedId={selectedId}
+                    onSelect={(id) => setSelectedId(id)}
+                    userLocation={userLocation}
+                    onLocateMe={() => locateUser(true)}
+                    isLocating={isLocating}
+                  />
+                )}
+              </div>
             </div>
 
             {/* List view */}

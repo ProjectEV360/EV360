@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { Loader } from "@googlemaps/js-api-loader";
 import { MapPin, Key, Layers, AlertCircle, Loader2, ExternalLink } from "lucide-react";
 import type { Station } from "@/lib/types";
-import { stationStatus } from "@/lib/station-utils";
+import { stationStatus, getDirectionsUrl } from "@/lib/station-utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { getStoredGoogleKey } from "@/lib/map-config";
@@ -15,6 +15,7 @@ interface StationGoogleMapProps {
   onSelect?: (id: string) => void;
   className?: string;
   onFallbackToOSM?: () => void;
+  userLocation?: { lat: number; lng: number } | null;
 }
 
 // Google Maps Dark Theme Styles
@@ -106,10 +107,13 @@ export function StationGoogleMap({
   onSelect,
   className = "",
   onFallbackToOSM,
+  userLocation,
 }: StationGoogleMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
   const markersMapRef = useRef<Map<string, google.maps.Marker>>(new Map());
+  const userMarkerRef = useRef<google.maps.Marker | null>(null);
+  const userCircleRef = useRef<google.maps.Circle | null>(null);
   const infoWindowRef = useRef<google.maps.InfoWindow | null>(null);
 
   const [apiKey, setApiKey] = useState<string>(getStoredGoogleKey);
@@ -171,8 +175,18 @@ export function StationGoogleMap({
         }
       });
 
+    const resizeObserver = new ResizeObserver(() => {
+      if (mapInstanceRef.current && window.google) {
+        google.maps.event.trigger(mapInstanceRef.current, "resize");
+      }
+    });
+    if (containerRef.current) {
+      resizeObserver.observe(containerRef.current);
+    }
+
     return () => {
       isMounted = false;
+      resizeObserver.disconnect();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [apiKey, isDarkMode]);
@@ -195,13 +209,11 @@ export function StationGoogleMap({
         status === "available" ? "#10b981" : status === "in_use" ? "#f59e0b" : "#ef4444";
 
       // Custom SVG Pin Marker
-      const pinSvg = `data:image/svg+xml;utf-8,<svg xmlns="http://www.w3.org/2000/svg" width="34" height="42" viewBox="0 0 34 42">
-        <path d="M17 0C7.61 0 0 7.61 0 17C0 27.2 14.5 40.5 15.6 41.5C16.4 42.2 17.6 42.2 18.4 41.5C19.5 40.5 34 27.2 34 17C34 7.61 26.39 0 17 0Z" fill="${encodeURIComponent(
-          color,
-        )}" stroke="#ffffff" stroke-width="2"/>
-        <circle cx="17" cy="16" r="10" fill="#ffffff" opacity="0.25"/>
-        <path d="M18 9L11 18H16L15 25L23 15H18L18 9Z" fill="#ffffff"/>
-      </svg>`;
+      const pinSvgRaw =
+        '<svg xmlns="http://www.w3.org/2000/svg" width="34" height="42" viewBox="0 0 34 42"><path d="M17 0C7.61 0 0 7.61 0 17C0 27.2 14.5 40.5 15.6 41.5C16.4 42.2 17.6 42.2 18.4 41.5C19.5 40.5 34 27.2 34 17C34 7.61 26.39 0 17 0Z" fill="' +
+        encodeURIComponent(color) +
+        '" stroke="#ffffff" stroke-width="2"/><circle cx="17" cy="16" r="10" fill="#ffffff" opacity="0.25"/><path d="M18 9L11 18H16L15 25L23 15H18L18 9Z" fill="#ffffff"/></svg>';
+      const pinSvg = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(pinSvgRaw);
 
       const marker = new google.maps.Marker({
         position: { lat: s.lat, lng: s.lng },
@@ -221,14 +233,19 @@ export function StationGoogleMap({
 
         if (infoWindowRef.current) {
           const avail = s.connectors.filter((c) => c.status === "available").length;
+          const directionsUrl = getDirectionsUrl(s.lat, s.lng);
           const content = `
             <div style="font-family: system-ui, sans-serif; padding: 4px; color: #1e293b; max-width: 220px;">
               <h4 style="margin: 0; font-weight: 700; font-size: 14px;">${s.name}</h4>
               <p style="margin: 3px 0 6px 0; font-size: 11px; color: #64748b;">${s.address}, ${s.city}</p>
-              <div style="display: flex; gap: 6px; font-size: 11px; font-weight: 600;">
+              <div style="display: flex; gap: 6px; font-size: 11px; font-weight: 600; margin-bottom: 8px;">
                 <span style="color: ${color};">● ${avail}/${s.connectors.length} Free</span>
                 <span style="color: #0d9488;">⚡ ${Math.max(...s.connectors.map((c) => c.power_kw))} kW</span>
               </div>
+              <a href="${directionsUrl}" target="_blank" rel="noopener noreferrer" 
+                 style="display: inline-block; background: #2563eb; color: white; text-decoration: none; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; text-align: center; width: 100%; box-sizing: border-box;">
+                Get Directions
+              </a>
             </div>
           `;
           infoWindowRef.current.setContent(content);
@@ -252,6 +269,71 @@ export function StationGoogleMap({
       }
     }
   }, [selectedId]);
+
+  // Center on center prop change
+  useEffect(() => {
+    if (!center || !mapInstanceRef.current) return;
+    mapInstanceRef.current.panTo({ lat: center[0], lng: center[1] });
+    if (zoom) {
+      mapInstanceRef.current.setZoom(zoom);
+    }
+  }, [center, zoom]);
+
+  // Render and sync user location marker on Google Maps
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map || typeof google === "undefined") return;
+
+    if (!userLocation) {
+      if (userMarkerRef.current) {
+        userMarkerRef.current.setMap(null);
+        userMarkerRef.current = null;
+      }
+      if (userCircleRef.current) {
+        userCircleRef.current.setMap(null);
+        userCircleRef.current = null;
+      }
+      return;
+    }
+
+    const pos = { lat: userLocation.lat, lng: userLocation.lng };
+    const userDotSvgRaw =
+      '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28"><circle cx="14" cy="14" r="12" fill="#2563eb" fill-opacity="0.25"/><circle cx="14" cy="14" r="7" fill="#2563eb" stroke="#ffffff" stroke-width="2.5"/></svg>';
+    const userDotSvg = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(userDotSvgRaw);
+
+    if (!userMarkerRef.current) {
+      const marker = new google.maps.Marker({
+        position: pos,
+        map,
+        title: "Your Location",
+        icon: {
+          url: userDotSvg,
+          scaledSize: new google.maps.Size(28, 28),
+          anchor: new google.maps.Point(14, 14),
+        },
+        zIndex: 1000,
+      });
+
+      const circle = new google.maps.Circle({
+        strokeColor: "#2563eb",
+        strokeOpacity: 0.4,
+        strokeWeight: 1,
+        fillColor: "#3b82f6",
+        fillOpacity: 0.08,
+        map,
+        center: pos,
+        radius: 120,
+      });
+
+      userMarkerRef.current = marker;
+      userCircleRef.current = circle;
+    } else {
+      userMarkerRef.current.setPosition(pos);
+      if (userCircleRef.current) {
+        userCircleRef.current.setCenter(pos);
+      }
+    }
+  }, [userLocation]);
 
   // Fallback / Key Input State
   if (!apiKey || loadError) {
