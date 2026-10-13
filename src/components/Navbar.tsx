@@ -10,7 +10,11 @@ const NAV_ITEMS = [
   { to: "/map", label: "Map", icon: Map },
 ] as const;
 
-export function Navbar() {
+interface NavbarProps {
+  hideNavLinks?: boolean;
+}
+
+export function Navbar({ hideNavLinks = false }: NavbarProps = {}) {
   const { user } = useAuth();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -36,37 +40,39 @@ export function Navbar() {
         </Link>
 
         {/* Desktop Nav */}
-        <div className="hidden items-center gap-1 md:flex">
-          {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
-            <Link
-              key={to}
-              to={to}
-              id={`nav-${label.toLowerCase()}`}
-              className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                isActive(to)
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:bg-accent hover:text-foreground"
-              }`}
-            >
-              <Icon className="h-4 w-4" />
-              {label}
-            </Link>
-          ))}
-          {user && (
-            <Link
-              to="/profile"
-              id="nav-favourites-desktop"
-              className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                isActive("/profile")
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:bg-accent hover:text-foreground"
-              }`}
-            >
-              <Heart className="h-4 w-4" />
-              Favourites
-            </Link>
-          )}
-        </div>
+        {!hideNavLinks && (
+          <div className="hidden items-center gap-1 md:flex">
+            {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
+              <Link
+                key={to}
+                to={to}
+                id={`nav-${label.toLowerCase()}`}
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                  isActive(to)
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                }`}
+              >
+                <Icon className="h-4 w-4" />
+                {label}
+              </Link>
+            ))}
+            {user && (
+              <Link
+                to="/profile"
+                id="nav-favourites-desktop"
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                  isActive("/profile")
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                }`}
+              >
+                <Heart className="h-4 w-4" />
+                Favourites
+              </Link>
+            )}
+          </div>
+        )}
 
         {/* Right side */}
         <div className="flex items-center gap-2">
@@ -92,38 +98,41 @@ export function Navbar() {
             </Link>
           )}
           {/* Mobile hamburger */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="rounded-full md:hidden"
-            onClick={() => setMobileOpen((o) => !o)}
-            id="nav-mobile-toggle"
-            aria-label="Toggle menu"
-          >
-            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </Button>
+          {(!hideNavLinks || user) && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="rounded-full md:hidden"
+              onClick={() => setMobileOpen((o) => !o)}
+              id="nav-mobile-toggle"
+              aria-label="Toggle menu"
+            >
+              {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </Button>
+          )}
         </div>
       </nav>
 
       {/* Mobile menu */}
-      {mobileOpen && (
+      {mobileOpen && (!hideNavLinks || user) && (
         <div className="border-t border-border/50 bg-background/95 backdrop-blur-xl md:hidden animate-in slide-in-from-top-2 duration-200">
           <div className="mx-auto max-w-7xl space-y-1 px-4 py-3">
-            {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
-              <Link
-                key={to}
-                to={to}
-                onClick={() => setMobileOpen(false)}
-                className={`flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                  isActive(to)
-                    ? "bg-primary/10 text-primary"
-                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                }`}
-              >
-                <Icon className="h-4 w-4" />
-                {label}
-              </Link>
-            ))}
+            {!hideNavLinks &&
+              NAV_ITEMS.map(({ to, label, icon: Icon }) => (
+                <Link
+                  key={to}
+                  to={to}
+                  onClick={() => setMobileOpen(false)}
+                  className={`flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                    isActive(to)
+                      ? "bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                  {label}
+                </Link>
+              ))}
             {user && (
               <Link
                 to="/profile"

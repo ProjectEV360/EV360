@@ -18,6 +18,7 @@ import { filterStations, distanceKm } from "@/lib/station-utils";
 import { DEFAULT_FILTERS, type StationFilters } from "@/lib/types";
 import { geocode } from "@/services/stationService";
 import { toast } from "sonner";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 const StationMap = lazy(() =>
   import("@/components/StationMap").then((m) => ({ default: m.StationMap })),
@@ -25,7 +26,7 @@ const StationMap = lazy(() =>
 
 export const Route = createFileRoute("/map")({
   ssr: false,
-  component: MapPage,
+  component: ProtectedMapRoute,
   head: () => ({
     meta: [
       { title: "Map — ChargeHub" },
@@ -37,6 +38,14 @@ export const Route = createFileRoute("/map")({
     ],
   }),
 });
+
+function ProtectedMapRoute() {
+  return (
+    <ProtectedRoute fallbackMessage="Please sign in to access the map">
+      <MapPage />
+    </ProtectedRoute>
+  );
+}
 
 function MapPage() {
   const { user } = useAuth();

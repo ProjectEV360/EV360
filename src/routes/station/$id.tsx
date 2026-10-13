@@ -35,6 +35,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { reportIssue } from "@/services/stationService";
 import { STATUS_LABEL, maxPower } from "@/lib/station-utils";
 import { toast } from "sonner";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 const StationMap = lazy(() =>
   import("@/components/StationMap").then((m) => ({ default: m.StationMap })),
@@ -42,7 +43,7 @@ const StationMap = lazy(() =>
 
 export const Route = createFileRoute("/station/$id")({
   ssr: false,
-  component: StationDetailPage,
+  component: ProtectedStationRoute,
   head: () => ({
     meta: [
       { title: "Station Details — ChargeHub" },
@@ -53,6 +54,14 @@ export const Route = createFileRoute("/station/$id")({
     ],
   }),
 });
+
+function ProtectedStationRoute() {
+  return (
+    <ProtectedRoute fallbackMessage="Please sign in to view station details">
+      <StationDetailPage />
+    </ProtectedRoute>
+  );
+}
 
 const statusColor: Record<string, string> = {
   available: "bg-status-available",

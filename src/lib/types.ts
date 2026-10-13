@@ -52,3 +52,14 @@ export const DEFAULT_FILTERS: StationFilters = {
   availableOnly: false,
   vehicleId: null,
 };
+
+export interface Profile {
+  id: string;
+  full_name: string | null;
+  email?: string | null;
+  phone?: string | null;
+  city?: string | null;
+  avatar_url?: string | null;
+  vehicle_id: string | null;
+  created_at?: string | null;
+}

@@ -79,4 +79,14 @@ describe("Navbar component", () => {
     expect(screen.getByText("Favourites")).toBeInTheDocument();
     expect(screen.queryByText("Sign In")).not.toBeInTheDocument();
   });
+
+  it("hides primary navigation links (Home, Map) when hideNavLinks is true", () => {
+    mockUser.mockReturnValue(null);
+    render(<Navbar hideNavLinks />);
+
+    expect(screen.getAllByAltText(/EV360/i)[0]).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /Home/i })).toBeNull();
+    expect(screen.queryByRole("link", { name: /Map/i })).toBeNull();
+    expect(screen.getByText("Sign In")).toBeInTheDocument();
+  });
 });

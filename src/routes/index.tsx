@@ -1,20 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import {
-  Zap,
-  MapPin,
-  Search,
-  Shield,
-  ArrowRight,
-  ChevronRight,
-  Battery,
-  Clock,
-  Star,
-  Plug,
-} from "lucide-react";
+import { Zap, MapPin, Search, Shield, ArrowRight, Battery, Clock, Star, Plug } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/Navbar";
 import { useStations } from "@/hooks/useChargeData";
 import { stationStatus } from "@/lib/station-utils";
+import { HeroGrid } from "@/components/landing/HeroGrid";
+import { HeroHeadline, StaggerFade, STAGGER } from "@/components/landing/HeroHeadline";
+import "@/components/landing/hero-animations.css";
 
 export const Route = createFileRoute("/")({
   component: LandingPage,
@@ -62,7 +54,7 @@ function FeatureCard({
   );
 }
 
-function LandingPage() {
+export function LandingPage() {
   const { data: stations } = useStations();
   const totalStations = stations?.length ?? 0;
   const cities = stations ? [...new Set(stations.map((s) => s.city))].length : 0;
@@ -73,55 +65,49 @@ function LandingPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
+      <Navbar hideNavLinks />
 
       {/* Hero */}
       <section className="relative overflow-hidden pt-16">
-        {/* Background gradient */}
-        <div className="absolute inset-0 bg-hero" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_40%,var(--background)_100%)]" />
+        {/* Living charging grid background */}
+        <div className="hero-grid-container">
+          <HeroGrid />
+        </div>
 
         <div className="relative mx-auto max-w-7xl px-4 pb-20 pt-20 sm:px-6 sm:pt-28 lg:px-8 lg:pt-36">
           <div className="mx-auto max-w-3xl text-center">
             {/* Pill badge */}
-            <div className="mx-auto mb-6 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-sm">
+            <StaggerFade
+              delayMs={STAGGER.pill}
+              className="mx-auto mb-6 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-sm"
+            >
               <Zap className="h-4 w-4 text-primary" />
               <span className="text-primary font-medium">India's EV Charging Network</span>
-            </div>
+            </StaggerFade>
 
-            <h1 className="font-display text-4xl font-bold tracking-tight text-foreground sm:text-5xl lg:text-6xl">
-              Find Your Nearest <span className="text-gradient">Charging Station</span>
-            </h1>
-            <p className="mt-6 text-lg leading-relaxed text-muted-foreground sm:text-xl">
+            <HeroHeadline />
+
+            <StaggerFade
+              delayMs={STAGGER.subtitle}
+              className="mt-6 text-lg leading-relaxed text-muted-foreground sm:text-xl"
+            >
               Discover, navigate, and charge your EV at thousands of stations across India.
               Real-time availability, pricing, and reviews — all in one place.
-            </p>
+            </StaggerFade>
 
-            {/* CTA buttons */}
-            <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-              <Link to="/map">
-                <Button
-                  id="hero-explore-map"
-                  size="lg"
-                  className="gap-2 rounded-full bg-gradient-primary px-8 shadow-glow text-base hover:opacity-90 transition-opacity"
-                >
-                  <MapPin className="h-5 w-5" />
-                  Explore Map
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </Link>
+            {/* CTA button */}
+            <StaggerFade delayMs={STAGGER.cta} className="mt-10 flex justify-center">
               <Link to="/login">
                 <Button
                   id="hero-get-started"
-                  variant="outline"
                   size="lg"
-                  className="gap-2 rounded-full px-8 text-base"
+                  className="gap-2 rounded-full bg-gradient-primary px-8 shadow-glow text-base hover:opacity-90 transition-opacity"
                 >
                   Get Started
-                  <ChevronRight className="h-4 w-4" />
+                  <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
-            </div>
+            </StaggerFade>
           </div>
         </div>
       </section>
@@ -191,15 +177,15 @@ function LandingPage() {
             Join ChargeHub and never worry about finding a charging station again.
           </p>
           <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-            <Link to="/map">
+            <Link to="/login">
               <Button
-                id="cta-open-map"
+                id="cta-get-started"
                 size="lg"
                 variant="secondary"
-                className="gap-2 rounded-full px-8 text-base"
+                className="gap-2 rounded-full px-8 text-base shadow-sm hover:opacity-90 transition-opacity"
               >
-                <MapPin className="h-5 w-5" />
-                Open Map
+                Get Started
+                <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
             <Link to="/signup">
