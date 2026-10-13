@@ -92,23 +92,23 @@ describe("station-utils", () => {
 
   describe("connectorMatches", () => {
     it("matches connector with default filters", () => {
-      expect(connectorMatches(mockConnectors[0], defaultFilters)).toBe(true);
+      expect(connectorMatches(mockConnectors[0]!, defaultFilters)).toBe(true);
     });
 
     it("filters out if type does not match", () => {
       const filters: StationFilters = { ...defaultFilters, connectorTypes: ["GB/T"] };
-      expect(connectorMatches(mockConnectors[0], filters)).toBe(false);
+      expect(connectorMatches(mockConnectors[0]!, filters)).toBe(false);
     });
 
     it("filters out if power is below minKw", () => {
       const filters: StationFilters = { ...defaultFilters, minKw: 100 };
-      expect(connectorMatches(mockConnectors[0], filters)).toBe(false);
+      expect(connectorMatches(mockConnectors[0]!, filters)).toBe(false);
     });
 
     it("filters out non-available connector when availableOnly is true", () => {
       const filters: StationFilters = { ...defaultFilters, availableOnly: true };
-      expect(connectorMatches(mockConnectors[0], filters)).toBe(true);
-      expect(connectorMatches(mockConnectors[1], filters)).toBe(false);
+      expect(connectorMatches(mockConnectors[0]!, filters)).toBe(true);
+      expect(connectorMatches(mockConnectors[1]!, filters)).toBe(false);
     });
   });
 

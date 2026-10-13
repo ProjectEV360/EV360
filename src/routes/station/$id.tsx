@@ -17,7 +17,7 @@ import {
   BatteryCharging,
   CreditCard,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
@@ -29,7 +29,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Navbar } from "@/components/Navbar";
-import { StationMap } from "@/components/StationMap";
 import { ChargingPaymentModal } from "@/components/ChargingPaymentModal";
 import { useStation, useFavouriteIds, useToggleFavourite } from "@/hooks/useChargeData";
 import { useAuth } from "@/hooks/useAuth";
@@ -37,7 +36,12 @@ import { reportIssue } from "@/services/stationService";
 import { STATUS_LABEL, maxPower } from "@/lib/station-utils";
 import { toast } from "sonner";
 
+const StationMap = lazy(() =>
+  import("@/components/StationMap").then((m) => ({ default: m.StationMap })),
+);
+
 export const Route = createFileRoute("/station/$id")({
+  ssr: false,
   component: StationDetailPage,
   head: () => ({
     meta: [
@@ -139,12 +143,20 @@ function StationDetailPage() {
       <div className="pt-16">
         {/* Map */}
         <div className="h-[280px] sm:h-[340px]">
-          <StationMap
-            stations={[station]}
-            center={[station.lat, station.lng]}
-            zoom={15}
-            selectedId={station.id}
-          />
+          <Suspense
+            fallback={
+              <div className="flex h-full w-full items-center justify-center bg-card">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            }
+          >
+            <StationMap
+              stations={[station]}
+              center={[station.lat, station.lng]}
+              zoom={15}
+              selectedId={station.id}
+            />
+          </Suspense>
         </div>
 
         <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 lg:px-8">

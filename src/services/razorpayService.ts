@@ -9,18 +9,18 @@ export interface PaymentOptions {
   connectorType: string;
   powerKw: number;
   kwh: number;
-  userEmail?: string | null;
-  userName?: string | null;
-  userPhone?: string;
+  userEmail?: string | null | undefined;
+  userName?: string | null | undefined;
+  userPhone?: string | undefined;
   onSuccess: (response: RazorpaySuccessResponse) => void;
-  onDismiss?: () => void;
-  onError?: (error: unknown) => void;
+  onDismiss?: (() => void) | undefined;
+  onError?: ((error: unknown) => void) | undefined;
 }
 
 export interface RazorpaySuccessResponse {
   razorpay_payment_id: string;
-  razorpay_order_id?: string;
-  razorpay_signature?: string;
+  razorpay_order_id?: string | undefined;
+  razorpay_signature?: string | undefined;
   amount: number;
   stationName: string;
   connectorType: string;
@@ -31,10 +31,12 @@ export interface RazorpaySuccessResponse {
 // Global window declaration for Razorpay
 declare global {
   interface Window {
-    Razorpay?: new (options: Record<string, unknown>) => {
-      open: () => void;
-      close?: () => void;
-    };
+    Razorpay?:
+      | (new (options: Record<string, unknown>) => {
+          open: () => void;
+          close?: (() => void) | undefined;
+        })
+      | undefined;
   }
 }
 
@@ -83,7 +85,7 @@ export function getRazorpayKey(): string {
     }
   }
 
-  const envKey = import.meta.env.VITE_RAZORPAY_KEY_ID;
+  const envKey = import.meta.env["VITE_RAZORPAY_KEY_ID"];
   if (envKey && envKey.trim()) {
     return envKey.trim();
   }

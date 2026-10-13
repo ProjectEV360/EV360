@@ -1,11 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Search, Navigation, Loader2, List, MapIcon, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, lazy, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Navbar } from "@/components/Navbar";
 import { StationCard } from "@/components/StationCard";
-import { StationMap } from "@/components/StationMap";
 import { FilterPanel } from "@/components/FilterPanel";
 import {
   useStations,
@@ -20,7 +19,12 @@ import { DEFAULT_FILTERS, type StationFilters } from "@/lib/types";
 import { geocode } from "@/services/stationService";
 import { toast } from "sonner";
 
+const StationMap = lazy(() =>
+  import("@/components/StationMap").then((m) => ({ default: m.StationMap })),
+);
+
 export const Route = createFileRoute("/map")({
+  ssr: false,
   component: MapPage,
   head: () => ({
     meta: [
@@ -286,16 +290,24 @@ function MapPage() {
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
                   </div>
                 ) : (
-                  <StationMap
-                    stations={sorted}
-                    center={mapCenter}
-                    zoom={mapZoom}
-                    selectedId={selectedId}
-                    onSelect={(id) => setSelectedId(id)}
-                    userLocation={userLocation}
-                    onLocateMe={() => locateUser(true)}
-                    isLocating={isLocating}
-                  />
+                  <Suspense
+                    fallback={
+                      <div className="flex h-full w-full items-center justify-center">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                      </div>
+                    }
+                  >
+                    <StationMap
+                      stations={sorted}
+                      center={mapCenter}
+                      zoom={mapZoom}
+                      selectedId={selectedId}
+                      onSelect={(id) => setSelectedId(id)}
+                      userLocation={userLocation}
+                      onLocateMe={() => locateUser(true)}
+                      isLocating={isLocating}
+                    />
+                  </Suspense>
                 )}
               </div>
             </div>
@@ -333,15 +345,15 @@ function MapPage() {
                         <StationCard
                           station={s}
                           isFav={favIds.includes(s.id)}
-                          onToggleFav={
-                            user
-                              ? () =>
+                          {...(user
+                            ? {
+                                onToggleFav: () =>
                                   toggleFav.mutate({
                                     stationId: s.id,
                                     isFav: favIds.includes(s.id),
-                                  })
-                              : undefined
-                          }
+                                  }),
+                              }
+                            : {})}
                           distance={userLocation ? distanceKm(userLocation, s) : null}
                         />
                       </div>

@@ -44,12 +44,17 @@ describe("Razorpay Service", () => {
 
   it("opens checkout with correct INR paise conversion and callbacks", async () => {
     const mockOpen = vi.fn();
-    let capturedOptions:
-      | (Record<string, unknown> & { handler?: (res: { razorpay_payment_id: string }) => void })
-      | null = null;
+    const captured: {
+      current: {
+        amount?: number;
+        currency?: string;
+        name?: string;
+        handler?: (res: { razorpay_payment_id: string }) => void;
+      } | null;
+    } = { current: null };
 
     window.Razorpay = vi.fn().mockImplementation(function (opts: Record<string, unknown>) {
-      capturedOptions = opts as typeof capturedOptions;
+      captured.current = opts as typeof captured.current;
       return { open: mockOpen };
     }) as unknown as typeof window.Razorpay;
 
@@ -66,12 +71,12 @@ describe("Razorpay Service", () => {
 
     expect(window.Razorpay).toHaveBeenCalledTimes(1);
     expect(mockOpen).toHaveBeenCalledTimes(1);
-    expect(capturedOptions.amount).toBe(50000); // 500 * 100 paise
-    expect(capturedOptions.currency).toBe("INR");
-    expect(capturedOptions.name).toBe("ChargeHub India");
+    expect(captured.current?.amount).toBe(50000); // 500 * 100 paise
+    expect(captured.current?.currency).toBe("INR");
+    expect(captured.current?.name).toBe("ChargeHub India");
 
     // Simulate callback
-    capturedOptions.handler({ razorpay_payment_id: "pay_test_999" });
+    captured.current?.handler?.({ razorpay_payment_id: "pay_test_999" });
     expect(handleSuccess).toHaveBeenCalledWith(
       expect.objectContaining({
         razorpay_payment_id: "pay_test_999",

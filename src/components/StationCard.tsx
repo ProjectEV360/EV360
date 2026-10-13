@@ -13,9 +13,9 @@ import { Button } from "@/components/ui/button";
 
 interface StationCardProps {
   station: Station;
-  isFav?: boolean;
-  onToggleFav?: () => void;
-  distance?: number | null;
+  isFav?: boolean | undefined;
+  onToggleFav?: (() => void) | undefined;
+  distance?: number | null | undefined;
 }
 
 const statusColor: Record<string, string> = {

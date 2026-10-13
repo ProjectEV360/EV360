@@ -95,7 +95,7 @@ function FilterContent({ filters, onChange, operators, vehicles }: FilterPanelPr
           max={150}
           step={5}
           value={[filters.minKw]}
-          onValueChange={([v]) => onChange({ ...filters, minKw: v })}
+          onValueChange={([v]) => onChange({ ...filters, minKw: v ?? 0 })}
           className="py-2"
         />
         <div className="flex justify-between text-[10px] text-muted-foreground">

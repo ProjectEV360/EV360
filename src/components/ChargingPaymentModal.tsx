@@ -48,7 +48,7 @@ export function ChargingPaymentModal({
   const initialConnector =
     station.connectors.find((c) => c.id === preselectedConnectorId) ||
     station.connectors.find((c) => c.status === "available") ||
-    station.connectors[0];
+    station.connectors[0]!;
 
   const [selectedConnector, setSelectedConnector] = useState<Connector>(initialConnector);
   const [targetKwh, setTargetKwh] = useState<number>(25);
@@ -104,7 +104,7 @@ export function ChargingPaymentModal({
         powerKw: selectedConnector.power_kw,
         kwh: targetKwh,
         userEmail: user?.email,
-        userName: user?.user_metadata?.full_name,
+        userName: (user?.user_metadata?.["full_name"] as string | undefined) ?? null,
         onSuccess: (response) => {
           setIsProcessing(false);
           setCompletedSession(response);
@@ -417,7 +417,7 @@ export function ChargingPaymentModal({
                 max={75}
                 step={5}
                 value={[targetKwh]}
-                onValueChange={([val]) => setTargetKwh(val)}
+                onValueChange={([val]) => setTargetKwh(val ?? 25)}
                 className="mt-3 py-2"
               />
 

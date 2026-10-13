@@ -6,6 +6,6 @@ export function getStoredGoogleKey(): string {
     const saved = localStorage.getItem("chargehub_gmaps_key");
     if (saved && saved.trim()) return saved.trim();
   }
-  const envKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+  const envKey = import.meta.env["VITE_GOOGLE_MAPS_API_KEY"];
   return envKey ? envKey.trim() : "";
 }
