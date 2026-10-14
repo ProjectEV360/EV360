@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Zap, MapPin, Search, Shield, ArrowRight, Battery, Clock, Star, Plug } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,25 +13,132 @@ export const Route = createFileRoute("/")({
   component: LandingPage,
 });
 
+/**
+ * Animated number counter that smoothly counts up to target value with easing.
+ * Respects prefers-reduced-motion and animates between live value changes.
+ */
+function AnimatedNumber({
+  value,
+  duration = 1200,
+  delay = 0,
+}: {
+  value: number;
+  duration?: number;
+  delay?: number;
+}) {
+  const isTest = typeof process !== "undefined" && process.env["NODE_ENV"] === "test";
+  const [count, setCount] = useState(() => (isTest ? value : 0));
+  const prevValue = useRef(isTest ? value : 0);
+
+  useEffect(() => {
+    if (isTest) {
+      setCount(value);
+      prevValue.current = value;
+      return;
+    }
+
+    if (
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) {
+      setCount(value);
+      prevValue.current = value;
+      return;
+    }
+
+    const startVal = prevValue.current;
+    const endVal = value;
+    if (startVal === endVal && count === endVal) return;
+
+    let start: number | null = null;
+    let frameId: number;
+
+    const timer = setTimeout(() => {
+      const step = (now: number) => {
+        if (!start) start = now;
+        const progress = Math.min((now - start) / duration, 1);
+        // easeOutExpo for rapid initial ramp followed by gentle settle
+        const ease = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+        const current = Math.round(startVal + (endVal - startVal) * ease);
+        setCount(current);
+
+        if (progress < 1) {
+          frameId = requestAnimationFrame(step);
+        } else {
+          prevValue.current = endVal;
+        }
+      };
+      frameId = requestAnimationFrame(step);
+    }, delay);
+
+    return () => {
+      clearTimeout(timer);
+      if (frameId) cancelAnimationFrame(frameId);
+    };
+  }, [value, duration, delay, isTest, count]);
+
+  return <span className="tabular-nums">{count}</span>;
+}
+
 function StatCard({
   icon: Icon,
   value,
   label,
+  delayMs = 0,
+  badge,
+  hint,
+  to = "/map",
 }: {
   icon: React.ElementType;
-  value: string;
+  value: number | string;
   label: string;
+  delayMs?: number;
+  badge?: React.ReactNode;
+  hint?: string;
+  to?: string;
 }) {
+  const numericValue = typeof value === "number" ? value : parseInt(value, 10);
+  const isNumeric = !Number.isNaN(numericValue);
+
   return (
-    <div className="group flex flex-col items-center rounded-2xl border border-border/60 bg-card px-4 py-5 sm:px-5 sm:py-6 lg:px-6 lg:py-7 shadow-card transition-all duration-300 hover:shadow-glow hover:-translate-y-1">
-      <div className="flex h-10 w-10 sm:h-11 sm:w-11 lg:h-12 lg:w-12 items-center justify-center rounded-xl bg-primary/10 transition-colors group-hover:bg-primary/20">
-        <Icon className="h-5 w-5 sm:h-5.5 sm:w-5.5 lg:h-6 lg:w-6 text-primary" />
-      </div>
-      <span className="mt-2.5 sm:mt-3 font-display text-2xl sm:text-3xl lg:text-3xl font-bold text-foreground">
-        {value}
-      </span>
-      <span className="mt-0.5 sm:mt-1 text-xs sm:text-sm text-muted-foreground">{label}</span>
-    </div>
+    <StaggerFade delayMs={delayMs} className="h-full">
+      <Link
+        to={to}
+        className="group relative flex h-full flex-col items-center justify-between rounded-2xl border border-border/60 bg-card p-4 sm:p-5 lg:p-6 shadow-card transition-all duration-300 hover:shadow-glow hover:-translate-y-1.5 hover:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/40 overflow-hidden"
+      >
+        {/* Subtle top hover glow border */}
+        <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+
+        {/* Top row: Icon + optional badge */}
+        <div className="flex w-full items-center justify-between">
+          <div className="flex h-10 w-10 sm:h-11 sm:w-11 lg:h-12 lg:w-12 items-center justify-center rounded-xl bg-primary/10 text-primary transition-all duration-300 group-hover:bg-primary group-hover:text-primary-foreground group-hover:scale-110 shadow-sm">
+            <Icon className="h-5 w-5 sm:h-5.5 sm:w-5.5 lg:h-6 lg:w-6 transition-transform duration-300 group-hover:rotate-6" />
+          </div>
+          {badge ? (
+            <div>{badge}</div>
+          ) : (
+            <div className="h-1.5 w-1.5 rounded-full bg-primary/20 transition-all duration-300 group-hover:bg-primary/60" />
+          )}
+        </div>
+
+        {/* Counter Value */}
+        <div className="mt-3 sm:mt-4 text-center">
+          <div className="font-display text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-foreground transition-colors duration-300 group-hover:text-primary">
+            {isNumeric ? <AnimatedNumber value={numericValue} delay={delayMs} /> : value}
+          </div>
+          <span className="mt-1 block text-xs sm:text-sm font-medium text-muted-foreground transition-colors duration-300 group-hover:text-foreground">
+            {label}
+          </span>
+        </div>
+
+        {/* Micro hint */}
+        {hint && (
+          <span className="mt-2 text-[10px] sm:text-[11px] font-medium text-muted-foreground/80 tracking-wide transition-colors duration-300 group-hover:text-muted-foreground">
+            {hint}
+          </span>
+        )}
+      </Link>
+    </StaggerFade>
   );
 }
 
@@ -59,9 +167,16 @@ export function LandingPage() {
   const totalStations = stations?.length ?? 0;
   const cities = stations ? [...new Set(stations.map((s) => s.city))].length : 0;
   const totalConnectors = stations ? stations.reduce((sum, s) => sum + s.connectors.length, 0) : 0;
-  const availableNow = stations
+  const availableConnectors = stations
+    ? stations.reduce(
+        (sum, s) => sum + s.connectors.filter((c) => c.status === "available").length,
+        0,
+      )
+    : 0;
+  const availableStations = stations
     ? stations.filter((s) => stationStatus(s.connectors) === "available").length
     : 0;
+  const availableNow = availableConnectors > 0 ? availableConnectors : availableStations;
 
   return (
     <div className="min-h-screen bg-background">
@@ -115,10 +230,47 @@ export function LandingPage() {
       {/* Stats */}
       <section className="relative z-10 -mt-8 px-4 sm:px-6 lg:px-8">
         <div className="mx-auto grid max-w-5xl grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4 lg:gap-5 xl:gap-6">
-          <StatCard icon={MapPin} value={String(totalStations)} label="Stations" />
-          <StatCard icon={Plug} value={String(totalConnectors)} label="Connectors" />
-          <StatCard icon={Battery} value={String(availableNow)} label="Available Now" />
-          <StatCard icon={Star} value={String(cities)} label="Cities" />
+          <StatCard
+            icon={MapPin}
+            value={totalStations}
+            label="Stations"
+            delayMs={STAGGER.cta + 80}
+            hint="Verified EV charging hubs"
+            to="/map"
+          />
+          <StatCard
+            icon={Plug}
+            value={totalConnectors}
+            label="Connectors"
+            delayMs={STAGGER.cta + 160}
+            hint="CCS2, Type 2, CHAdeMO"
+            to="/map"
+          />
+          <StatCard
+            icon={Battery}
+            value={availableNow}
+            label="Available Now"
+            delayMs={STAGGER.cta + 240}
+            badge={
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 shadow-sm">
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                </span>
+                LIVE
+              </span>
+            }
+            hint={`${availableStations} of ${totalStations} hubs ready`}
+            to="/map"
+          />
+          <StatCard
+            icon={Star}
+            value={cities}
+            label="Cities"
+            delayMs={STAGGER.cta + 320}
+            hint="Metro coverage across India"
+            to="/map"
+          />
         </div>
       </section>
 

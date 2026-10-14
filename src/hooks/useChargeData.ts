@@ -12,7 +12,13 @@ import {
   removeFavourite,
 } from "@/services/stationService";
 
-export const useStations = () => useQuery({ queryKey: ["stations"], queryFn: getStations });
+export const useStations = () =>
+  useQuery({
+    queryKey: ["stations"],
+    queryFn: getStations,
+    refetchInterval: 15000, // Dynamic background refresh every 15s
+    refetchOnWindowFocus: true,
+  });
 export const useStation = (id: string) =>
   useQuery({ queryKey: ["station", id], queryFn: () => getStation(id) });
 export const useOperators = () =>

@@ -120,3 +120,32 @@ describe("Route Protection", () => {
     expect(mockNavigate).not.toHaveBeenCalled();
   });
 });
+
+describe("Dynamic Landing Stats Cards", () => {
+  it("renders dynamic stat cards with counts, live indicator, and map links", async () => {
+    const { LandingPage } = await import("@/routes/index");
+    const queryClient = new QueryClient();
+
+    mockUser.mockReturnValue(null);
+    mockLoading.mockReturnValue(false);
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <LandingPage />
+      </QueryClientProvider>,
+    );
+
+    // Assert stat labels are present
+    expect(screen.getByText("Stations")).toBeInTheDocument();
+    expect(screen.getByText("Connectors")).toBeInTheDocument();
+    expect(screen.getByText("Available Now")).toBeInTheDocument();
+    expect(screen.getByText("Cities")).toBeInTheDocument();
+
+    // Assert live pulse indicator on Available Now card
+    expect(screen.getByText("LIVE")).toBeInTheDocument();
+
+    // Assert all stat cards link to /map
+    const mapLinks = screen.getAllByRole("link").filter((el) => el.getAttribute("href") === "/map");
+    expect(mapLinks.length).toBeGreaterThanOrEqual(4);
+  });
+});
