@@ -100,7 +100,7 @@ export function StationMap({
       if (resizeTimer) cancelAnimationFrame(resizeTimer);
       resizeTimer = requestAnimationFrame(() => {
         if (mapRef.current) {
-          mapRef.current.invalidateSize({ debounceMove: true });
+          mapRef.current.invalidateSize({ debounceMoveend: true });
         }
       });
     });

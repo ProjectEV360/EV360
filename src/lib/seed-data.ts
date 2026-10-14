@@ -1,11 +1,37 @@
 import type { Operator, Station, Vehicle } from "./types";
 
+const tataOperator: Operator = {
+  id: "00000000-0000-0000-0000-000000000001",
+  name: "Tata Power EZ Charge",
+  logo_url: null,
+};
+const jioOperator: Operator = {
+  id: "00000000-0000-0000-0000-000000000002",
+  name: "Jio-bp pulse",
+  logo_url: null,
+};
+const statiqOperator: Operator = {
+  id: "00000000-0000-0000-0000-000000000003",
+  name: "Statiq",
+  logo_url: null,
+};
+const zeonOperator: Operator = {
+  id: "00000000-0000-0000-0000-000000000004",
+  name: "Zeon Charging",
+  logo_url: null,
+};
+const glidaOperator: Operator = {
+  id: "00000000-0000-0000-0000-000000000005",
+  name: "GLIDA (Fortum)",
+  logo_url: null,
+};
+
 export const SEED_OPERATORS: Operator[] = [
-  { id: "00000000-0000-0000-0000-000000000001", name: "Tata Power EZ Charge", logo_url: null },
-  { id: "00000000-0000-0000-0000-000000000002", name: "Jio-bp pulse", logo_url: null },
-  { id: "00000000-0000-0000-0000-000000000003", name: "Statiq", logo_url: null },
-  { id: "00000000-0000-0000-0000-000000000004", name: "Zeon Charging", logo_url: null },
-  { id: "00000000-0000-0000-0000-000000000005", name: "GLIDA (Fortum)", logo_url: null },
+  tataOperator,
+  jioOperator,
+  statiqOperator,
+  zeonOperator,
+  glidaOperator,
 ];
 
 export const SEED_VEHICLES: Vehicle[] = [
@@ -126,7 +152,7 @@ export const SEED_STATIONS: Station[] = [
     lng: 72.836705,
     opening_hours: "24/7",
     amenities: ["cafe", "parking", "restroom"],
-    operator: SEED_OPERATORS[0],
+    operator: tataOperator,
     connectors: [
       { id: "c-1", type: "Type 2", power_kw: 22, price_per_kwh: 15.0, status: "available" },
       { id: "c-2", type: "CCS2", power_kw: 60, price_per_kwh: 21.0, status: "in_use" },
@@ -141,7 +167,7 @@ export const SEED_STATIONS: Station[] = [
     lng: 72.863245,
     opening_hours: "24/7",
     amenities: ["restroom", "cafe", "parking", "wifi"],
-    operator: SEED_OPERATORS[0],
+    operator: tataOperator,
     connectors: [
       { id: "c-3", type: "CCS2", power_kw: 150, price_per_kwh: 23.5, status: "available" },
       { id: "c-4", type: "CCS2", power_kw: 60, price_per_kwh: 21.0, status: "available" },
@@ -157,7 +183,7 @@ export const SEED_STATIONS: Station[] = [
     lng: 72.901221,
     opening_hours: "24/7",
     amenities: ["restroom", "parking", "wifi", "cafe"],
-    operator: SEED_OPERATORS[1],
+    operator: jioOperator,
     connectors: [
       { id: "c-6", type: "CHAdeMO", power_kw: 25, price_per_kwh: 19.0, status: "available" },
       { id: "c-7", type: "CCS2", power_kw: 60, price_per_kwh: 21.5, status: "available" },
@@ -172,7 +198,7 @@ export const SEED_STATIONS: Station[] = [
     lng: 72.830041,
     opening_hours: "24/7",
     amenities: ["cafe", "parking", "wifi", "restroom"],
-    operator: SEED_OPERATORS[3],
+    operator: zeonOperator,
     connectors: [
       { id: "c-8", type: "CHAdeMO", power_kw: 25, price_per_kwh: 19.5, status: "available" },
       { id: "c-9", type: "Type 2", power_kw: 11, price_per_kwh: 14.0, status: "available" },
@@ -188,7 +214,7 @@ export const SEED_STATIONS: Station[] = [
     lng: 72.817702,
     opening_hours: "24/7",
     amenities: ["parking", "restroom"],
-    operator: SEED_OPERATORS[1],
+    operator: jioOperator,
     connectors: [
       { id: "c-11", type: "CCS2", power_kw: 150, price_per_kwh: 23.0, status: "available" },
       { id: "c-12", type: "Type 2", power_kw: 22, price_per_kwh: 14.5, status: "available" },
@@ -203,7 +229,7 @@ export const SEED_STATIONS: Station[] = [
     lng: 77.2169,
     opening_hours: "24/7",
     amenities: ["restroom", "cafe", "wifi"],
-    operator: SEED_OPERATORS[2],
+    operator: statiqOperator,
     connectors: [
       { id: "c-13", type: "CCS2", power_kw: 60, price_per_kwh: 19.5, status: "available" },
       { id: "c-14", type: "Type 2", power_kw: 7.4, price_per_kwh: 13.5, status: "available" },
@@ -218,7 +244,7 @@ export const SEED_STATIONS: Station[] = [
     lng: 77.624199,
     opening_hours: "24/7",
     amenities: ["restroom", "parking", "wifi", "cafe"],
-    operator: SEED_OPERATORS[2],
+    operator: statiqOperator,
     connectors: [
       { id: "c-15", type: "CCS2", power_kw: 120, price_per_kwh: 22.0, status: "available" },
       { id: "c-16", type: "Type 2", power_kw: 22, price_per_kwh: 14.0, status: "available" },
@@ -233,7 +259,7 @@ export const SEED_STATIONS: Station[] = [
     lng: 73.893142,
     opening_hours: "24/7",
     amenities: ["restroom", "parking", "cafe"],
-    operator: SEED_OPERATORS[4],
+    operator: glidaOperator,
     connectors: [
       { id: "c-17", type: "CCS2", power_kw: 60, price_per_kwh: 20.0, status: "available" },
       { id: "c-18", type: "Type 2", power_kw: 11, price_per_kwh: 14.5, status: "available" },

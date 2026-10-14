@@ -105,12 +105,12 @@ function ProfilePage() {
   // Populate form from profile or user metadata
   useEffect(() => {
     if (profile || user) {
-      const meta = user?.user_metadata || {};
-      setFullName(profile?.full_name ?? meta.full_name ?? meta.name ?? "");
-      setPhone(profile?.phone ?? meta.phone ?? user?.phone ?? "");
-      setCity(profile?.city ?? meta.city ?? "");
-      setAvatarUrl(profile?.avatar_url ?? meta.avatar_url ?? meta.picture ?? "");
-      setVehicleId(profile?.vehicle_id ?? meta.vehicle_id ?? "none");
+      const meta = (user?.user_metadata || {}) as Record<string, string | undefined>;
+      setFullName(profile?.full_name ?? meta["full_name"] ?? meta["name"] ?? "");
+      setPhone(profile?.phone ?? meta["phone"] ?? user?.phone ?? "");
+      setCity(profile?.city ?? meta["city"] ?? "");
+      setAvatarUrl(profile?.avatar_url ?? meta["avatar_url"] ?? meta["picture"] ?? "");
+      setVehicleId(profile?.vehicle_id ?? meta["vehicle_id"] ?? "none");
     }
   }, [profile, user]);
 
@@ -139,7 +139,7 @@ function ProfilePage() {
       await saveProfile({
         id: user.id,
         full_name: fullName.trim() || null,
-        email: user.email,
+        email: user.email ?? null,
         phone: phone.trim() || null,
         city: city.trim() || null,
         avatar_url: avatarUrl.trim() || null,
@@ -271,7 +271,7 @@ function ProfilePage() {
                       </p>
                       <p className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground sm:justify-start">
                         <Mail className="h-3.5 w-3.5" />
-                        {user.email}
+                        {user?.email}
                       </p>
                       <p className="mt-1 flex items-center justify-center gap-1.5 text-xs text-muted-foreground sm:justify-start">
                         <Calendar className="h-3.5 w-3.5 text-primary" />
@@ -337,7 +337,7 @@ function ProfilePage() {
                         <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                           id="profile-email"
-                          value={user.email ?? ""}
+                          value={user?.email ?? ""}
                           disabled
                           readOnly
                           className="pl-9 rounded-xl bg-muted/40 cursor-not-allowed opacity-80"
