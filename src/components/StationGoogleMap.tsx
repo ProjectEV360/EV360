@@ -393,7 +393,7 @@ export function StationGoogleMap({
   }
 
   return (
-    <div className="relative h-full w-full">
+    <div className="relative isolate z-0 h-full w-full overflow-hidden">
       {isLoading && (
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-card/80 backdrop-blur-xs">
           <Loader2 className="h-7 w-7 animate-spin text-primary" />
@@ -402,8 +402,7 @@ export function StationGoogleMap({
       <div
         ref={containerRef}
         id="google-station-map"
-        className={`h-full w-full ${className}`}
-        style={{ minHeight: 300 }}
+        className={`h-full w-full overflow-hidden ${className}`}
       />
     </div>
   );

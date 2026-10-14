@@ -17,7 +17,7 @@ import {
   BatteryCharging,
   CreditCard,
 } from "lucide-react";
-import { useState, lazy, Suspense } from "react";
+import { useState, lazy, Suspense, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
@@ -95,6 +95,12 @@ function StationDetailPage() {
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [selectedConnectorId, setSelectedConnectorId] = useState<string | null>(null);
 
+  const stationsList = useMemo(() => (station ? [station] : []), [station]);
+  const stationCenter = useMemo<[number, number] | undefined>(
+    () => (station ? [station.lat, station.lng] : undefined),
+    [station],
+  );
+
   const isFav = favIds.includes(id);
 
   const handleReport = async () => {
@@ -151,7 +157,7 @@ function StationDetailPage() {
       <Navbar />
       <div className="pt-16">
         {/* Map */}
-        <div className="h-[280px] sm:h-[340px]">
+        <div className="relative isolate z-0 w-full h-[280px] sm:h-[340px] overflow-hidden bg-muted">
           <Suspense
             fallback={
               <div className="flex h-full w-full items-center justify-center bg-card">
@@ -159,12 +165,15 @@ function StationDetailPage() {
               </div>
             }
           >
-            <StationMap
-              stations={[station]}
-              center={[station.lat, station.lng]}
-              zoom={15}
-              selectedId={station.id}
-            />
+            {stationCenter && (
+              <StationMap
+                stations={stationsList}
+                center={stationCenter}
+                zoom={15}
+                selectedId={station.id}
+                className="h-full w-full"
+              />
+            )}
           </Suspense>
         </div>
 

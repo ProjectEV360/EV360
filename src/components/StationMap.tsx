@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import L from "leaflet";
 import "leaflet.markercluster";
-import { Layers, Map as MapIcon, Settings, Key, LocateFixed, Loader2 } from "lucide-react";
+import { Layers, Key, LocateFixed, Loader2 } from "lucide-react";
 import type { Station } from "@/lib/types";
 import { stationStatus } from "@/lib/station-utils";
 import { StationGoogleMap } from "./StationGoogleMap";
@@ -43,13 +43,11 @@ export function StationMap({
   onLocateMe,
   isLocating = false,
 }: StationMapProps) {
-  // Map Provider State: 'google' | 'osm'
+  // Map Provider State: 'google' | 'osm' (defaults to OpenStreetMap)
   const [provider, setProvider] = useState<"google" | "osm">(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("chargehub_map_provider");
-      if (saved === "google" || saved === "osm") return saved;
-      // If a google key is present, default to google
-      if (getStoredGoogleKey()) return "google";
+      if (saved === "osm") return "osm";
     }
     return "osm";
   });
@@ -96,9 +94,15 @@ export function StationMap({
       maxZoom: 19,
     }).addTo(map);
 
-    // Responsive resize observer to keep Leaflet synchronized with container size changes
+    // Responsive resize observer with rAF debouncing to prevent layout thrashing
+    let resizeTimer: number | null = null;
     const resizeObserver = new ResizeObserver(() => {
-      map.invalidateSize();
+      if (resizeTimer) cancelAnimationFrame(resizeTimer);
+      resizeTimer = requestAnimationFrame(() => {
+        if (mapRef.current) {
+          mapRef.current.invalidateSize({ debounceMove: true });
+        }
+      });
     });
     if (containerRef.current) {
       resizeObserver.observe(containerRef.current);
@@ -122,6 +126,7 @@ export function StationMap({
     clusterRef.current = cluster;
 
     return () => {
+      if (resizeTimer) cancelAnimationFrame(resizeTimer);
       resizeObserver.disconnect();
       if (userMarkerRef.current) {
         userMarkerRef.current.remove();
@@ -239,16 +244,16 @@ export function StationMap({
   const centerLat = center?.[0];
   const centerLng = center?.[1];
 
-  // Leaflet Fly to center if center prop changes
+  // Leaflet Fly to center if coordinates change
   useEffect(() => {
-    if (provider !== "osm" || !mapRef.current || !center) return;
-    mapRef.current.flyTo(center, zoom ?? 13, { duration: 0.8 });
-  }, [centerLat, centerLng, center, zoom, provider]);
+    if (provider !== "osm" || !mapRef.current || centerLat == null || centerLng == null) return;
+    mapRef.current.flyTo([centerLat, centerLng], zoom ?? 13, { duration: 0.8 });
+  }, [centerLat, centerLng, zoom, provider]);
 
   return (
-    <div className="relative h-full w-full">
+    <div className="relative isolate z-0 h-full w-full overflow-hidden">
       {/* Floating Provider Switcher & Locate Pill */}
-      <div className="absolute top-3 right-3 z-[1000] flex items-center gap-1 rounded-full border border-border/60 bg-card/90 p-1 shadow-card backdrop-blur-md">
+      <div className="absolute top-3 right-3 z-30 flex items-center gap-1 rounded-full border border-border/60 bg-card/90 p-1 shadow-card backdrop-blur-md">
         {onLocateMe && (
           <>
             <button
@@ -276,20 +281,6 @@ export function StationMap({
         )}
 
         <button
-          id="map-provider-google"
-          type="button"
-          onClick={() => switchProvider("google")}
-          className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold transition-all ${
-            provider === "google"
-              ? "bg-primary text-primary-foreground shadow-xs"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <MapIcon className="h-3.5 w-3.5" />
-          Google Maps
-        </button>
-
-        <button
           id="map-provider-osm"
           type="button"
           onClick={() => switchProvider("osm")}
@@ -301,19 +292,6 @@ export function StationMap({
         >
           <Layers className="h-3.5 w-3.5" />
           OpenStreetMap
-        </button>
-
-        <button
-          id="google-maps-settings-btn"
-          type="button"
-          onClick={() => {
-            setInputKey(getStoredGoogleKey());
-            setKeyModalOpen(true);
-          }}
-          title="Google Maps API Key Settings"
-          className="rounded-full p-1 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-        >
-          <Settings className="h-3.5 w-3.5" />
         </button>
       </div>
 
@@ -333,8 +311,7 @@ export function StationMap({
         <div
           ref={containerRef}
           id="station-map"
-          className={`h-full w-full ${className}`}
-          style={{ minHeight: 300 }}
+          className={`h-full w-full overflow-hidden ${className}`}
         />
       )}
 

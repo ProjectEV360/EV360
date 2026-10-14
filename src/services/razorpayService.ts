@@ -97,19 +97,73 @@ export function getRazorpayKey(): string {
 /**
  * Initiates Razorpay Checkout
  */
+function getApiUrl(path: string): string {
+  if (
+    typeof window !== "undefined" &&
+    window.location &&
+    window.location.origin &&
+    window.location.origin !== "null" &&
+    !window.location.origin.startsWith("about:")
+  ) {
+    return path;
+  }
+  return `http://localhost:5173${path}`;
+}
+
 export async function openRazorpayCheckout(options: PaymentOptions): Promise<void> {
   const isLoaded = await loadRazorpayScript();
   if (!isLoaded || !window.Razorpay) {
     throw new Error("Could not load Razorpay SDK. Please check your internet connection.");
   }
 
-  const key = getRazorpayKey();
-  const amountInPaise = Math.round(options.amountInRupees * 100);
+  // Step 1: Create a genuine Razorpay Order on the backend
+  let orderData: {
+    success: boolean;
+    orderId?: string | undefined;
+    amount?: number | undefined;
+    currency?: string | undefined;
+    keyId?: string | undefined;
+    error?: string | undefined;
+  };
+
+  try {
+    const res = await fetch(getApiUrl("/api/razorpay/create-order"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        amountInRupees: options.amountInRupees,
+        stationName: options.stationName,
+        connectorType: options.connectorType,
+        powerKw: options.powerKw,
+        kwh: options.kwh,
+        userEmail: options.userEmail,
+        userName: options.userName,
+        userPhone: options.userPhone,
+      }),
+    });
+
+    orderData = (await res.json()) as typeof orderData;
+  } catch (netErr) {
+    console.error("[Razorpay Order Request Error]", netErr);
+    throw new Error(
+      "Failed to communicate with payment backend. Please ensure the development server is running.",
+    );
+  }
+
+  if (!orderData.success || !orderData.orderId) {
+    const errMsg = orderData.error || "Failed to create Razorpay payment order.";
+    console.error("[Razorpay Order Creation Failed]", errMsg);
+    throw new Error(errMsg);
+  }
+
+  const key = orderData.keyId || getRazorpayKey();
+  const amount = orderData.amount ?? Math.round(options.amountInRupees * 100);
 
   const rzpOptions = {
     key,
-    amount: amountInPaise,
-    currency: "INR",
+    order_id: orderData.orderId, // Crucial: required for test payment methods to appear
+    amount,
+    currency: orderData.currency || "INR",
     name: "ChargeHub India",
     description: `EV Charge: ${options.kwh} kWh (${options.connectorType} ${options.powerKw}kW)`,
     image: "/favicon.ico",
@@ -124,30 +178,69 @@ export async function openRazorpayCheckout(options: PaymentOptions): Promise<voi
       contact: options.userPhone || "9876543210",
     },
     theme: {
-      color: "#0d9488", // Teal/emerald brand color
+      color: "#0d9488", // Brand green/teal
       backdrop_color: "rgba(0, 0, 0, 0.6)",
     },
     modal: {
       ondismiss: () => {
         options.onDismiss?.();
       },
+      confirm_close: true,
+      escape: true,
+      handleback: true,
     },
-    handler: (response: {
+    handler: async (response: {
       razorpay_payment_id: string;
       razorpay_order_id?: string;
       razorpay_signature?: string;
     }) => {
-      const successPayload: RazorpaySuccessResponse = {
-        razorpay_payment_id: response.razorpay_payment_id,
-        razorpay_order_id: response.razorpay_order_id,
-        razorpay_signature: response.razorpay_signature,
-        amount: options.amountInRupees,
-        stationName: options.stationName,
-        connectorType: options.connectorType,
-        kwh: options.kwh,
-        timestamp: new Date().toISOString(),
-      };
-      options.onSuccess(successPayload);
+      // Step 2: Send payment response to backend for HMAC-SHA256 signature verification
+      try {
+        const verifyRes = await fetch(getApiUrl("/api/razorpay/verify-payment"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_order_id: response.razorpay_order_id || orderData.orderId,
+            razorpay_signature: response.razorpay_signature,
+            amountInRupees: options.amountInRupees,
+            stationName: options.stationName,
+            connectorType: options.connectorType,
+            kwh: options.kwh,
+          }),
+        });
+
+        const verifyResult = (await verifyRes.json()) as {
+          success: boolean;
+          verified: boolean;
+          error?: string;
+        };
+
+        if (!verifyResult.success || !verifyResult.verified) {
+          const err = new Error(
+            verifyResult.error ||
+              "Payment signature verification failed. Invalid server signature.",
+          );
+          console.error("[Payment Verification Error]", err);
+          options.onError?.(err);
+          return;
+        }
+
+        const successPayload: RazorpaySuccessResponse = {
+          razorpay_payment_id: response.razorpay_payment_id,
+          razorpay_order_id: response.razorpay_order_id || orderData.orderId,
+          razorpay_signature: response.razorpay_signature,
+          amount: options.amountInRupees,
+          stationName: options.stationName,
+          connectorType: options.connectorType,
+          kwh: options.kwh,
+          timestamp: new Date().toISOString(),
+        };
+        options.onSuccess(successPayload);
+      } catch (err) {
+        console.error("[Razorpay Verification Request Failed]", err);
+        options.onError?.(err);
+      }
     },
   };
 

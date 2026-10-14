@@ -69,6 +69,16 @@ export function ChargingPaymentModal({
     }
   }, [preselectedConnectorId, station.connectors]);
 
+  // Lock background scrolling when modal is open
+  useEffect(() => {
+    if (!open) return;
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [open]);
+
   // Charging animation when session is active
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -118,14 +128,16 @@ export function ChargingPaymentModal({
         },
         onError: (err) => {
           setIsProcessing(false);
-          toast.error("Payment failed. You can use Demo Simulation.");
-          console.error(err);
+          const message = err instanceof Error ? err.message : "Payment failed";
+          toast.error(message);
+          console.error("[Razorpay Error]", err);
         },
       });
-    } catch {
+    } catch (err) {
       setIsProcessing(false);
-      // Fallback hint
-      toast.error("Could not launch Razorpay. You can try Instant Demo Simulation.");
+      const message = err instanceof Error ? err.message : "Could not initialize Razorpay checkout";
+      toast.error(message);
+      console.error("[Razorpay Checkout Exception]", err);
     }
   };
 
@@ -174,7 +186,7 @@ export function ChargingPaymentModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[92vh] max-w-xl overflow-y-auto sm:rounded-3xl border-border/60 bg-card p-6 shadow-2xl">
+      <DialogContent className="w-[calc(100vw-2rem)] sm:w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-2xl sm:rounded-3xl border-border/60 bg-card p-4 sm:p-6 shadow-2xl">
         <DialogHeader className="border-b border-border/50 pb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">

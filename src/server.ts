@@ -44,9 +44,70 @@ function isH3SwallowedErrorBody(body: string): boolean {
   }
 }
 
+import {
+  createRazorpayOrder,
+  verifyRazorpayPayment,
+  getRazorpayServerCredentials,
+  type CreateOrderParams,
+  type VerifyPaymentParams,
+} from "./services/razorpayServer";
+
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      const url = new URL(request.url);
+
+      // Handle Razorpay API endpoints
+      if (url.pathname === "/api/razorpay/create-order" && request.method === "POST") {
+        try {
+          const body = (await request.json()) as CreateOrderParams;
+          const result = await createRazorpayOrder(body);
+          return new Response(JSON.stringify(result), {
+            status: result.success ? 200 : 400,
+            headers: { "Content-Type": "application/json" },
+          });
+        } catch (err) {
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: err instanceof Error ? err.message : "Invalid JSON request body",
+            }),
+            { status: 400, headers: { "Content-Type": "application/json" } },
+          );
+        }
+      }
+
+      if (url.pathname === "/api/razorpay/verify-payment" && request.method === "POST") {
+        try {
+          const body = (await request.json()) as VerifyPaymentParams;
+          const result = await verifyRazorpayPayment(body);
+          return new Response(JSON.stringify(result), {
+            status: result.success && result.verified ? 200 : 400,
+            headers: { "Content-Type": "application/json" },
+          });
+        } catch (err) {
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: err instanceof Error ? err.message : "Invalid JSON request body",
+            }),
+            { status: 400, headers: { "Content-Type": "application/json" } },
+          );
+        }
+      }
+
+      if (url.pathname === "/api/razorpay/config" && request.method === "GET") {
+        const { keyId, keySecret } = getRazorpayServerCredentials();
+        return new Response(
+          JSON.stringify({
+            keyId,
+            hasSecret: Boolean(keySecret),
+            testMode: keyId.startsWith("rzp_test_"),
+          }),
+          { headers: { "Content-Type": "application/json" } },
+        );
+      }
+
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       return await normalizeCatastrophicSsrResponse(response);
@@ -54,7 +115,7 @@ export default {
       console.error(error);
       return new Response(renderErrorPage(), {
         status: 500,
-        headers: { "content-type": "text/html; charset=utf-8" },
+        headers: { "Content-Type": "text/html; charset=utf-8" },
       });
     }
   },
