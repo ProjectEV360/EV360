@@ -7,6 +7,7 @@ import { useStations } from "@/hooks/useChargeData";
 import { stationStatus } from "@/lib/station-utils";
 import { HeroGrid } from "@/components/landing/HeroGrid";
 import { HeroHeadline, StaggerFade, STAGGER } from "@/components/landing/HeroHeadline";
+import { SEED_STATIONS } from "@/lib/seed-data";
 import "@/components/landing/hero-animations.css";
 
 export const Route = createFileRoute("/")({
@@ -19,7 +20,7 @@ export const Route = createFileRoute("/")({
  */
 function AnimatedNumber({
   value,
-  duration = 1200,
+  duration = 900,
   delay = 0,
 }: {
   value: number;
@@ -28,12 +29,13 @@ function AnimatedNumber({
 }) {
   const isTest = typeof process !== "undefined" && process.env["NODE_ENV"] === "test";
   const [count, setCount] = useState(() => (isTest ? value : 0));
-  const prevValue = useRef(isTest ? value : 0);
+  const currentRef = useRef(isTest ? value : 0);
+  const isFirstRun = useRef(true);
 
   useEffect(() => {
     if (isTest) {
       setCount(value);
-      prevValue.current = value;
+      currentRef.current = value;
       return;
     }
 
@@ -42,40 +44,46 @@ function AnimatedNumber({
       window.matchMedia("(prefers-reduced-motion: reduce)").matches
     ) {
       setCount(value);
-      prevValue.current = value;
+      currentRef.current = value;
       return;
     }
 
-    const startVal = prevValue.current;
+    const startVal = currentRef.current;
     const endVal = value;
-    if (startVal === endVal && count === endVal) return;
+    if (startVal === endVal) return;
 
-    let start: number | null = null;
-    let frameId: number;
+    const waitMs = isFirstRun.current ? delay : 0;
+    isFirstRun.current = false;
+
+    let startTimestamp: number | null = null;
+    let animId: number;
 
     const timer = setTimeout(() => {
-      const step = (now: number) => {
-        if (!start) start = now;
-        const progress = Math.min((now - start) / duration, 1);
+      const step = (timestamp: number) => {
+        if (!startTimestamp) startTimestamp = timestamp;
+        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
         // easeOutExpo for rapid initial ramp followed by gentle settle
         const ease = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
-        const current = Math.round(startVal + (endVal - startVal) * ease);
-        setCount(current);
+        const nextVal = Math.round(startVal + (endVal - startVal) * ease);
+
+        currentRef.current = nextVal;
+        setCount(nextVal);
 
         if (progress < 1) {
-          frameId = requestAnimationFrame(step);
+          animId = requestAnimationFrame(step);
         } else {
-          prevValue.current = endVal;
+          currentRef.current = endVal;
+          setCount(endVal);
         }
       };
-      frameId = requestAnimationFrame(step);
-    }, delay);
+      animId = requestAnimationFrame(step);
+    }, waitMs);
 
     return () => {
       clearTimeout(timer);
-      if (frameId) cancelAnimationFrame(frameId);
+      if (animId) cancelAnimationFrame(animId);
     };
-  }, [value, duration, delay, isTest, count]);
+  }, [value, duration, delay, isTest]);
 
   return <span className="tabular-nums">{count}</span>;
 }
@@ -163,7 +171,7 @@ function FeatureCard({
 }
 
 export function LandingPage() {
-  const { data: stations } = useStations();
+  const { data: stations = SEED_STATIONS } = useStations();
   const totalStations = stations?.length ?? 0;
   const cities = stations ? [...new Set(stations.map((s) => s.city))].length : 0;
   const totalConnectors = stations ? stations.reduce((sum, s) => sum + s.connectors.length, 0) : 0;
