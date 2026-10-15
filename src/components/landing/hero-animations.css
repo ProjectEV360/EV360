@@ -1,71 +1,37 @@
 /* ═══════════════════════════════════════════════════════════════════
-   Landing-page hero animations – scoped styles
-   Only imported by the landing page route.
+   ChargeHub (EV360) Landing Page Motion Design System
+   All durations 300-700ms (ease-out only), except count-up (1200ms)
+   and infinite loops restricted to pin pulse (2.4s) and LIVE dot.
    ═══════════════════════════════════════════════════════════════════ */
 
-/* ─── 1. Living Charging Grid Background ──────────────────────────── */
-
-.hero-grid-container {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-  overflow: hidden;
-  /* Fade out toward the bottom and edges into the page */
-  mask-image: radial-gradient(ellipse 75% 65% at 50% 45%, black 25%, transparent 85%);
-  -webkit-mask-image: radial-gradient(ellipse 75% 65% at 50% 45%, black 25%, transparent 85%);
+/* ─── Motion Timing & Easing CSS Custom Properties ─────────────────── */
+:root {
+  --headline-duration: 700ms;
+  --headline-stagger: 80ms;
+  --headline-easing: cubic-bezier(0.22, 1, 0.36, 1);
+  --map-pin-stagger: 120ms;
+  --map-pin-entrance: 500ms;
+  --pin-pulse-duration: 2.4s;
+  --charging-line-duration: 700ms;
+  --charging-line-delay: 600ms;
+  --live-dot-blink-duration: 1.8s;
+  --countup-duration: 1200ms;
+  --section-entrance-duration: 500ms;
+  --section-entrance-distance: 16px;
+  --magnetic-transition-duration: 300ms;
+  --card-lift-distance: -2px;
+  --card-hover-duration: 300ms;
+  --connector-stagger: 80ms;
+  --ticker-flip-duration: 400ms;
+  --view-transition-duration: 500ms;
 }
 
-.hero-grid-svg {
-  width: 100%;
-  height: 100%;
-}
-
-/* Edges: faint blue lines (6-8% opacity) */
-.hero-grid-edge {
-  stroke: #2f80ed;
-  stroke-width: 1;
-  opacity: 0.07;
-}
-.dark .hero-grid-edge {
-  stroke: #dcebff;
-  opacity: 0.11;
-}
-
-/* Nodes: slightly stronger blue dots */
-.hero-grid-node {
-  fill: #2f80ed;
-  opacity: 0.14;
-}
-.dark .hero-grid-node {
-  fill: #dcebff;
-  opacity: 0.22;
-}
-
-/* Halo: glows blue when a pulse arrives */
-.hero-grid-halo {
-  fill: #2f80ed;
-  opacity: 0;
-  pointer-events: none;
-}
-.dark .hero-grid-halo {
-  fill: #dcebff;
-}
-
-/* Responsive: hide desktop-only nodes and edges on mobile */
-@media (max-width: 639px) {
-  .hero-grid-desktop-only {
-    display: none;
-  }
-}
-
-/* ─── 2. Headline Reveal & Battery Charge-Up Animation ────────────── */
-
+/* ─── 1. Headline Reveal Behind Overflow-Hidden Mask ──────────────── */
 .hero-headline {
   line-height: 1.15;
 }
 
-/* Invisible overflow mask for each rising word */
+/* Overflow-hidden mask for each headline word/line */
 .hero-reveal-mask {
   display: inline-block;
   overflow: hidden;
@@ -76,16 +42,18 @@
   margin-right: 0;
 }
 
-/* Word rises from behind mask: translateY(100%) -> 0 */
+/* Word slides up from behind mask: translateY(100%) -> translateY(0) */
 .hero-reveal-word {
   display: inline-block;
   transform: translateY(100%);
-  animation-name: hero-word-rise;
+  animation-name: heroWordRise;
+  animation-duration: var(--headline-duration);
+  animation-timing-function: var(--headline-easing);
   animation-fill-mode: both;
   will-change: transform;
 }
 
-@keyframes hero-word-rise {
+@keyframes heroWordRise {
   from {
     transform: translateY(100%);
   }
@@ -94,14 +62,13 @@
   }
 }
 
-/* "Charging Station" battery charge container */
+/* Charging Station battery container & fill sweep */
 .hero-charging-container {
   position: relative;
   display: inline-block;
   vertical-align: bottom;
 }
 
-/* Base text: pale mint outline / low-opacity uncharged state */
 .hero-charging-base {
   display: inline-block;
   color: #d9f5e8;
@@ -113,7 +80,6 @@
   -webkit-text-stroke: 1px rgba(52, 195, 143, 0.35);
 }
 
-/* Gradient fill: green (#34C38F) with hint of blue (#2F80ED) at far end */
 .hero-charging-fill {
   position: absolute;
   inset: 0;
@@ -124,12 +90,12 @@
   background-clip: text;
   color: transparent;
   clip-path: inset(0 100% 0 0);
-  animation-name: hero-charge-sweep;
+  animation-name: heroChargeSweep;
   animation-fill-mode: both;
   will-change: clip-path;
 }
 
-@keyframes hero-charge-sweep {
+@keyframes heroChargeSweep {
   from {
     clip-path: inset(0 100% 0 0);
   }
@@ -138,17 +104,16 @@
   }
 }
 
-/* ─── 3. Downstream Stagger Items (Subtitle, Pill, CTA) ───────────── */
-
+/* Downstream Stagger Items (Subtitle, Pill, CTA) */
 .hero-stagger-item {
   opacity: 0;
   transform: translateY(12px);
-  animation-name: hero-stagger-in;
+  animation-name: heroStaggerIn;
   animation-fill-mode: both;
   will-change: opacity, transform;
 }
 
-@keyframes hero-stagger-in {
+@keyframes heroStaggerIn {
   from {
     opacity: 0;
     transform: translateY(12px);
@@ -159,9 +124,221 @@
   }
 }
 
-/* ─── 4. Accessibility: prefers-reduced-motion ─────────────────────── */
+/* ─── 2. Stylized Map of India & Staggered Pins ───────────────────── */
+.hero-grid-container {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+  mask-image: radial-gradient(ellipse 75% 65% at 50% 45%, black 25%, transparent 85%);
+  -webkit-mask-image: radial-gradient(ellipse 75% 65% at 50% 45%, black 25%, transparent 85%);
+}
 
+.hero-grid-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.india-map-boundary {
+  stroke: var(--primary);
+  opacity: 0.12;
+}
+.dark .india-map-boundary {
+  stroke: var(--primary);
+  opacity: 0.18;
+}
+
+/* Highway corridor edges */
+.hero-grid-edge {
+  stroke: #2f80ed;
+  stroke-width: 1;
+  opacity: 0.07;
+}
+.dark .hero-grid-edge {
+  stroke: #dcebff;
+  opacity: 0.11;
+}
+
+/* Station pins with 120ms staggered entrance */
+.hero-station-pin {
+  opacity: 0;
+  transform-origin: center;
+  animation-name: pinStaggerIn;
+  animation-fill-mode: both;
+  will-change: transform, opacity;
+}
+
+@keyframes pinStaggerIn {
+  from {
+    transform: scale(0);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 0.85;
+  }
+}
+
+.hero-station-pin.pin-available {
+  fill: var(--status-available, #10b981);
+}
+
+.hero-station-pin.pin-busy {
+  fill: var(--muted-foreground);
+  opacity: 0.25;
+}
+
+/* Soft, slow pulse ring (2.4s loop) for available stations only */
+.hero-pin-pulse-ring {
+  fill: none;
+  stroke: var(--status-available, #10b981);
+  stroke-width: 1.5;
+  transform-origin: center;
+  animation: pinPulseLoop var(--pin-pulse-duration) cubic-bezier(0, 0, 0.2, 1) infinite;
+  pointer-events: none;
+}
+
+@keyframes pinPulseLoop {
+  0% {
+    r: 3.5px;
+    opacity: 0.8;
+    stroke-width: 1.5;
+  }
+  70% {
+    r: 16px;
+    opacity: 0;
+    stroke-width: 0.5;
+  }
+  100% {
+    r: 16px;
+    opacity: 0;
+    stroke-width: 0;
+  }
+}
+
+.hero-grid-halo {
+  fill: #2f80ed;
+  opacity: 0;
+  pointer-events: none;
+}
+.dark .hero-grid-halo {
+  fill: #dcebff;
+}
+
+@media (max-width: 639px) {
+  .hero-grid-desktop-only {
+    display: none;
+  }
+}
+
+/* ─── 3. Charging Line & LIVE Dot Gentle Blink ─────────────────────── */
+@keyframes liveDotBlink {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(0.92);
+  }
+}
+
+.animate-live-blink {
+  animation: liveDotBlink var(--live-dot-blink-duration) ease-in-out infinite;
+  will-change: opacity, transform;
+}
+
+/* ─── 4. Card Lift & Sequential Connector Lighting ────────────────── */
+.card-lift-motion {
+  transition:
+    transform var(--card-hover-duration) ease-out,
+    border-color var(--card-hover-duration) ease-out,
+    box-shadow var(--card-hover-duration) ease-out;
+  will-change: transform, border-color;
+}
+
+.card-lift-motion:hover {
+  transform: translateY(var(--card-lift-distance));
+  border-color: color-mix(in oklab, var(--primary) 70%, transparent);
+}
+
+/* Connector icons sequential light-up on card hover */
+.connector-seq-icon {
+  opacity: 0.45;
+  transition:
+    opacity 300ms ease-out,
+    color 300ms ease-out,
+    transform 300ms ease-out;
+  will-change: opacity, color, transform;
+}
+
+.group:hover .connector-seq-icon:nth-child(1) {
+  transition-delay: 0ms;
+  opacity: 1;
+  color: var(--primary);
+  transform: scale(1.05);
+}
+
+.group:hover .connector-seq-icon:nth-child(2) {
+  transition-delay: var(--connector-stagger);
+  opacity: 1;
+  color: var(--primary);
+  transform: scale(1.05);
+}
+
+.group:hover .connector-seq-icon:nth-child(3) {
+  transition-delay: calc(var(--connector-stagger) * 2);
+  opacity: 1;
+  color: var(--primary);
+  transform: scale(1.05);
+}
+
+/* ─── 5. CTA Magnetic & Arrow Nudge ───────────────────────────────── */
+.cta-arrow-nudge {
+  transition: transform 300ms ease-out;
+  will-change: transform;
+}
+
+.group:hover .cta-arrow-nudge {
+  transform: translateX(4px);
+}
+
+/* ─── 6. Live Station Ticker Vertical Roll ────────────────────────── */
+.ticker-flip-roll {
+  animation: tickerRoll var(--ticker-flip-duration) ease-out both;
+  will-change: transform, opacity;
+}
+
+@keyframes tickerRoll {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* ─── 7. View Transitions API Circular Reveal ─────────────────────── */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+/* ─── 8. Accessibility: prefers-reduced-motion ─────────────────────── */
 @media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
   .hero-reveal-word {
     animation: none !important;
     transform: translateY(0) !important;
@@ -181,5 +358,33 @@
     animation: none !important;
     opacity: 1 !important;
     transform: translateY(0) !important;
+  }
+
+  .hero-station-pin {
+    animation: none !important;
+    opacity: 0.4 !important;
+    transform: scale(1) !important;
+  }
+
+  .hero-pin-pulse-ring {
+    animation: none !important;
+    display: none !important;
+  }
+
+  .animate-live-blink {
+    animation: none !important;
+    opacity: 0.9 !important;
+  }
+
+  .card-lift-motion:hover {
+    transform: none !important;
+  }
+
+  .cta-arrow-nudge {
+    transform: none !important;
+  }
+
+  .group:hover .cta-arrow-nudge {
+    transform: none !important;
   }
 }

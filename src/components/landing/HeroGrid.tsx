@@ -1,301 +1,150 @@
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useState } from "react";
 
-/* ─── Node & edge layout ─────────────────────────────────────────────
-   Hand-placed on a 1 000 × 600 viewBox. On mobile (< 640 px) we hide
-   nodes marked `desktopOnly` so the grid stays legible.
+/* ─── Hero Map & Pin Timing Constants ──────────────────────────────
+   Pin Stagger: 120ms between consecutive pins (requirement 2)
+   Pin Entrance Duration: 500ms ease-out
+   Available Pin Pulse Loop: 2.4s (soft, slow pulse ring)
+   Busy Pins: stay static with no pulse loop
+   Container Opacity: Low (12-20%) to keep hero copy effortlessly readable
    ──────────────────────────────────────────────────────────────────── */
-interface Node {
+export const PIN_STAGGER_MS = 120;
+export const PIN_PULSE_DURATION_S = 2.4;
+export const PIN_ENTRANCE_MS = 500;
+export const PIN_EASING = "cubic-bezier(0.22, 1, 0.36, 1)";
+
+export interface StationPin {
   id: number;
   x: number;
   y: number;
+  city: string;
+  status: "available" | "busy";
   desktopOnly?: boolean;
 }
 
-const NODES: Node[] = [
-  { id: 0, x: 80, y: 80 },
-  { id: 1, x: 250, y: 50 },
-  { id: 2, x: 420, y: 100 },
-  { id: 3, x: 600, y: 60 },
-  { id: 4, x: 780, y: 90 },
-  { id: 5, x: 920, y: 50, desktopOnly: true },
-  { id: 6, x: 130, y: 230 },
-  { id: 7, x: 310, y: 210 },
-  { id: 8, x: 500, y: 250 },
-  { id: 9, x: 690, y: 220 },
-  { id: 10, x: 860, y: 240, desktopOnly: true },
-  { id: 11, x: 60, y: 400 },
-  { id: 12, x: 230, y: 380 },
-  { id: 13, x: 420, y: 420 },
-  { id: 14, x: 610, y: 390 },
-  { id: 15, x: 800, y: 410, desktopOnly: true },
-  { id: 16, x: 170, y: 530 },
-  { id: 17, x: 500, y: 550 },
-  { id: 18, x: 730, y: 520, desktopOnly: true },
-  { id: 19, x: 940, y: 350, desktopOnly: true },
+/**
+ * 20 Hub pins geographically mapped across India's premier EV corridors
+ * (Delhi-NCR, Mumbai, Bengaluru, Chennai, Hyderabad, Pune, Kolkata, etc.)
+ */
+export const INDIA_STATION_PINS: StationPin[] = [
+  // North
+  { id: 0, x: 470, y: 155, city: "Delhi NCR", status: "available" },
+  { id: 1, x: 440, y: 195, city: "Jaipur", status: "available" },
+  { id: 2, x: 475, y: 95, city: "Chandigarh", status: "available" },
+  { id: 3, x: 550, y: 205, city: "Lucknow", status: "available" },
+  { id: 4, x: 610, y: 225, city: "Patna", status: "busy", desktopOnly: true },
+
+  // West
+  { id: 5, x: 380, y: 265, city: "Ahmedabad", status: "available" },
+  { id: 6, x: 385, y: 305, city: "Surat", status: "available" },
+  { id: 7, x: 395, y: 355, city: "Mumbai", status: "available" },
+  { id: 8, x: 420, y: 375, city: "Pune", status: "available" },
+  { id: 9, x: 410, y: 440, city: "Goa", status: "busy", desktopOnly: true },
+
+  // Central
+  { id: 10, x: 485, y: 270, city: "Bhopal", status: "available" },
+  { id: 11, x: 455, y: 280, city: "Indore", status: "available" },
+  { id: 12, x: 515, y: 330, city: "Nagpur", status: "busy", desktopOnly: true },
+
+  // East
+  { id: 13, x: 670, y: 285, city: "Kolkata", status: "available" },
+  { id: 14, x: 630, y: 355, city: "Bhubaneswar", status: "available" },
+
+  // South
+  { id: 15, x: 505, y: 405, city: "Hyderabad", status: "available" },
+  { id: 16, x: 590, y: 415, city: "Visakhapatnam", status: "busy", desktopOnly: true },
+  { id: 17, x: 480, y: 475, city: "Bengaluru", status: "available" },
+  { id: 18, x: 535, y: 480, city: "Chennai", status: "available" },
+  { id: 19, x: 460, y: 535, city: "Kochi", status: "busy", desktopOnly: true },
 ];
 
-type Edge = [number, number];
-
-const EDGES: Edge[] = [
+/** Connectivity edges representing high-speed EV inter-city highway corridors */
+const CORRIDOR_EDGES: [number, number][] = [
   [0, 1],
-  [1, 2],
-  [2, 3],
+  [0, 2],
+  [0, 3],
+  [1, 5],
   [3, 4],
-  [4, 5],
-  [0, 6],
-  [1, 7],
-  [2, 8],
-  [3, 9],
-  [4, 10],
-  [5, 19],
+  [3, 10],
+  [5, 6],
+  [5, 11],
   [6, 7],
   [7, 8],
   [8, 9],
-  [9, 10],
-  [6, 11],
-  [7, 12],
-  [8, 13],
-  [9, 14],
-  [10, 15],
-  [10, 19],
+  [7, 11],
+  [10, 11],
+  [10, 12],
   [11, 12],
-  [12, 13],
+  [4, 13],
   [13, 14],
-  [14, 15],
-  [11, 16],
-  [12, 16],
-  [13, 17],
-  [14, 18],
-  [15, 18],
-  [16, 17],
+  [12, 15],
+  [14, 16],
+  [15, 16],
+  [8, 15],
+  [15, 17],
   [17, 18],
-  [15, 19],
+  [9, 17],
+  [17, 19],
+  [18, 19],
+  [0, 10],
 ];
 
-/* ─── Pulse constants ─────────────────────────────────────────────── */
-const MAX_CONCURRENT = 3;
-const PULSE_INTERVAL_MIN = 2000;
-const PULSE_INTERVAL_MAX = 4000;
-const PULSE_TRAVEL_MS = 1200;
-const NODE_GLOW_MS = 300;
-
-function edgeLength(n1: Node, n2: Node) {
-  return Math.hypot(n2.x - n1.x, n2.y - n1.y);
-}
-
-function randomBetween(a: number, b: number) {
-  return a + Math.random() * (b - a);
-}
+/**
+ * Stylized geometric path representing India's national coastline and frontier
+ * Scaled and aligned to viewBox 0 0 1000 600
+ */
+const INDIA_MAP_PATH =
+  "M 470 65 L 485 85 L 500 120 L 530 145 L 560 160 L 610 170 L 650 190 " +
+  "L 700 195 L 750 210 L 730 250 L 700 270 L 670 285 L 650 320 L 630 360 " +
+  "L 590 415 L 545 470 L 535 500 L 500 540 L 460 550 L 450 510 L 440 460 " +
+  "L 405 440 L 390 380 L 380 340 L 365 305 L 350 270 L 370 240 L 400 220 " +
+  "L 420 180 L 440 140 L 455 100 Z";
 
 export function HeroGrid() {
-  const svgRef = useRef<SVGSVGElement>(null);
-  const runningRef = useRef(true);
-  const activePulsesRef = useRef(0);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const reducedMotionRef = useRef(false);
-  const isMobileRef = useRef(false);
+  const [mounted, setMounted] = useState(false);
+  const isReducedMotion = useRef(false);
 
-  /* Visible edges filtering */
-  const getVisibleEdges = useCallback((): Edge[] => {
-    if (!isMobileRef.current) return EDGES;
-    const mobileIds = new Set(NODES.filter((n) => !n.desktopOnly).map((n) => n.id));
-    return EDGES.filter(([a, b]) => mobileIds.has(a) && mobileIds.has(b));
-  }, []);
-
-  /* Fire single pulse */
-  const firePulse = useCallback(() => {
-    const svg = svgRef.current;
-    if (!svg || !runningRef.current || reducedMotionRef.current) return;
-    if (activePulsesRef.current >= MAX_CONCURRENT) return;
-
-    const visibleEdges = getVisibleEdges();
-    if (!visibleEdges.length) return;
-    const edgeIdx = Math.floor(Math.random() * visibleEdges.length);
-    const [aId, bId] = visibleEdges[edgeIdx];
-
-    // Randomize direction: A->B or B->A
-    const forward = Math.random() > 0.5;
-    const startId = forward ? aId : bId;
-    const destId = forward ? bId : aId;
-    const nodeA = NODES[startId];
-    const nodeB = NODES[destId];
-    const len = edgeLength(nodeA, nodeB);
-    if (len <= 0) return;
-
-    const dashLen = Math.max(16, Math.min(len * 0.3, 42));
-
-    const pulse = document.createElementNS("http://www.w3.org/2000/svg", "line");
-    pulse.setAttribute("x1", String(nodeA.x));
-    pulse.setAttribute("y1", String(nodeA.y));
-    pulse.setAttribute("x2", String(nodeB.x));
-    pulse.setAttribute("y2", String(nodeB.y));
-    pulse.setAttribute("stroke", "#34C38F");
-    pulse.setAttribute("stroke-width", "2");
-    pulse.setAttribute("stroke-linecap", "round");
-    pulse.setAttribute("stroke-dasharray", `${dashLen} ${len * 2}`);
-    pulse.setAttribute("stroke-dashoffset", String(dashLen));
-    pulse.style.opacity = "0";
-    pulse.style.filter = "drop-shadow(0 0 3px #34C38F)";
-
-    const pulseGroup = svg.querySelector("#hero-grid-pulses");
-    if (!pulseGroup) return;
-    pulseGroup.appendChild(pulse);
-    activePulsesRef.current++;
-
-    const cleanupPulse = () => {
-      pulse.remove();
-      activePulsesRef.current = Math.max(0, activePulsesRef.current - 1);
-    };
-
-    if (typeof pulse.animate !== "function") {
-      cleanupPulse();
-      return;
-    }
-
-    const anim = pulse.animate(
-      [
-        { strokeDashoffset: dashLen, opacity: 0 },
-        { opacity: 0.85, offset: 0.15 },
-        { opacity: 0.85, offset: 0.85 },
-        { strokeDashoffset: -(len + dashLen), opacity: 0, offset: 1 },
-      ],
-      {
-        duration: PULSE_TRAVEL_MS,
-        easing: "cubic-bezier(0.22, 1, 0.36, 1)",
-        fill: "forwards",
-      },
-    );
-
-    anim.onfinish = () => {
-      cleanupPulse();
-
-      /* Brighten destination node for ~300ms */
-      const targetNode = svg.querySelector(`[data-node-id="${destId}"]`) as SVGElement | null;
-      const halo = svg.querySelector(`[data-halo-id="${destId}"]`) as SVGElement | null;
-      const isDark = document.documentElement.classList.contains("dark");
-      const baseOpacity = isDark ? 0.22 : 0.14;
-
-      if (targetNode && typeof targetNode.animate === "function") {
-        targetNode.animate(
-          [{ opacity: baseOpacity }, { opacity: 0.95 }, { opacity: baseOpacity }],
-          { duration: NODE_GLOW_MS, easing: "ease-out" },
-        );
-      }
-      if (halo && typeof halo.animate === "function") {
-        halo.animate([{ opacity: 0 }, { opacity: isDark ? 0.6 : 0.45 }, { opacity: 0 }], {
-          duration: NODE_GLOW_MS,
-          easing: "ease-out",
-        });
-      }
-    };
-
-    anim.oncancel = cleanupPulse;
-  }, [getVisibleEdges]);
-
-  /* ── Scheduling loop ─────────────────────────────────────────── */
-  const schedulePulse = useCallback(
-    (customDelay?: number) => {
-      if (!runningRef.current || reducedMotionRef.current) return;
-      const delay = customDelay ?? randomBetween(PULSE_INTERVAL_MIN, PULSE_INTERVAL_MAX);
-      timerRef.current = setTimeout(() => {
-        firePulse();
-        schedulePulse();
-      }, delay);
-    },
-    [firePulse],
-  );
-
-  /* ── Setup & teardown ────────────────────────────────────────── */
   useEffect(() => {
-    /* Reduced motion check */
-    const mql = window.matchMedia("(prefers-reduced-motion: reduce)");
-    reducedMotionRef.current = mql.matches;
-    const onMotionChange = (e: MediaQueryListEvent) => {
-      reducedMotionRef.current = e.matches;
-      if (e.matches) {
-        clearTimeout(timerRef.current);
-      } else {
-        schedulePulse(1000);
-      }
-    };
-    mql.addEventListener("change", onMotionChange);
-
-    /* Mobile check */
-    const checkMobile = () => {
-      isMobileRef.current = window.innerWidth < 640;
-    };
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-
-    /* Visibility check (tab hidden/visible) */
-    const onVisibility = () => {
-      if (document.hidden) {
-        runningRef.current = false;
-        clearTimeout(timerRef.current);
-      } else {
-        runningRef.current = true;
-        schedulePulse(1000);
-      }
-    };
-    document.addEventListener("visibilitychange", onVisibility);
-
-    /* IntersectionObserver (hero on-screen/off-screen) */
-    const el = svgRef.current;
-    let observer: IntersectionObserver | undefined;
-    if (el && typeof IntersectionObserver !== "undefined") {
-      observer = new IntersectionObserver(
-        ([entry]) => {
-          if (!entry.isIntersecting) {
-            runningRef.current = false;
-            clearTimeout(timerRef.current);
-          } else if (!document.hidden) {
-            runningRef.current = true;
-            schedulePulse(1000);
-          }
-        },
-        { threshold: 0.1 },
-      );
-      observer.observe(el);
-    }
-
-    /* Start initial pulse */
-    if (!reducedMotionRef.current) {
-      schedulePulse(800);
-    }
-
-    return () => {
-      clearTimeout(timerRef.current);
-      runningRef.current = false;
-      mql.removeEventListener("change", onMotionChange);
-      window.removeEventListener("resize", checkMobile);
-      document.removeEventListener("visibilitychange", onVisibility);
-      observer?.disconnect();
-      if (el) {
-        const pulseGroup = el.querySelector("#hero-grid-pulses");
-        if (pulseGroup) pulseGroup.replaceChildren();
-      }
-    };
-  }, [schedulePulse]);
-
-  const mobileIds = new Set(NODES.filter((n) => !n.desktopOnly).map((n) => n.id));
+    isReducedMotion.current =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    setMounted(true);
+  }, []);
 
   return (
     <svg
-      ref={svgRef}
       viewBox="0 0 1000 600"
       preserveAspectRatio="xMidYMid slice"
-      className="hero-grid-svg"
+      className="hero-grid-svg india-map-svg"
       aria-hidden="true"
     >
-      {/* ── Edges ─────────────────────────────────────── */}
+      <defs>
+        {/* Soft radial glow for available station pulse */}
+        <radialGradient id="pinGlow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.6" />
+          <stop offset="100%" stopColor="var(--primary)" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+
+      {/* ── Stylized India Map Silhouette (Low Opacity) ── */}
+      <path
+        d={INDIA_MAP_PATH}
+        className="india-map-boundary"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeDasharray="4 4"
+      />
+
+      {/* ── Highway Corridor Edges ──────────────────────── */}
       <g>
-        {EDGES.map(([aId, bId]) => {
-          const a = NODES[aId];
-          const b = NODES[bId];
+        {CORRIDOR_EDGES.map(([aId, bId]) => {
+          const a = INDIA_STATION_PINS[aId];
+          const b = INDIA_STATION_PINS[bId];
+          if (!a || !b) return null;
           const isDesktopEdge = a.desktopOnly || b.desktopOnly;
           return (
             <line
-              key={`e-${aId}-${bId}`}
+              key={`edge-${aId}-${bId}`}
               x1={a.x}
               y1={a.y}
               x2={b.x}
@@ -306,25 +155,63 @@ export function HeroGrid() {
         })}
       </g>
 
-      {/* ── Nodes ─────────────────────────────────────── */}
-      <g>
-        {NODES.map((n) => (
-          <g key={`n-${n.id}`} className={n.desktopOnly ? "hero-grid-desktop-only" : undefined}>
-            {/* Halo (glows on pulse arrival) */}
-            <circle data-halo-id={n.id} cx={n.x} cy={n.y} r="10" className="hero-grid-halo" />
-            {/* Core dot */}
-            <circle
-              data-node-id={n.id}
-              cx={n.x}
-              cy={n.y}
-              r="3.5"
-              className={`hero-grid-node${mobileIds.has(n.id) ? "" : " hero-grid-desktop-only"}`}
-            />
-          </g>
-        ))}
+      {/* ── Station Pins with 120ms Stagger & Pulse Rings ── */}
+      <g id="hero-station-pins">
+        {INDIA_STATION_PINS.map((pin, index) => {
+          const isAvailable = pin.status === "available";
+          const staggerDelayMs = index * PIN_STAGGER_MS;
+
+          return (
+            <g
+              key={`pin-${pin.id}`}
+              className={pin.desktopOnly ? "hero-grid-desktop-only" : undefined}
+            >
+              {/* Soft, slow pulse ring (2.4s loop) for available stations only */}
+              {isAvailable && (
+                <circle
+                  cx={pin.x}
+                  cy={pin.y}
+                  r="4"
+                  className="hero-pin-pulse-ring"
+                  style={{
+                    animationDelay: `${staggerDelayMs}ms`,
+                    animationDuration: `${PIN_PULSE_DURATION_S}s`,
+                  }}
+                />
+              )}
+
+              {/* Halo anchor for compatibility */}
+              <circle
+                data-halo-id={pin.id}
+                cx={pin.x}
+                cy={pin.y}
+                r="8"
+                className="hero-grid-halo"
+              />
+
+              {/* Core Station Pin with 120ms Staggered Entrance */}
+              <circle
+                data-node-id={pin.id}
+                cx={pin.x}
+                cy={pin.y}
+                r={isAvailable ? "3.5" : "2.5"}
+                className={`hero-grid-node hero-station-pin ${
+                  isAvailable ? "pin-available" : "pin-busy"
+                } ${pin.desktopOnly ? "hero-grid-desktop-only" : ""}`}
+                style={{
+                  animationDelay: `${staggerDelayMs}ms`,
+                  animationDuration: `${PIN_ENTRANCE_MS}ms`,
+                  animationTimingFunction: PIN_EASING,
+                  opacity:
+                    mounted && isReducedMotion.current ? (isAvailable ? 0.35 : 0.15) : undefined,
+                }}
+              />
+            </g>
+          );
+        })}
       </g>
 
-      {/* ── Pulse layer (children added dynamically) ── */}
+      {/* ── Active Pulses Layer ───────────────────────────── */}
       <g id="hero-grid-pulses" />
     </svg>
   );

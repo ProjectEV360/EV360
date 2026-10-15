@@ -2,16 +2,18 @@ import { type ReactNode } from "react";
 
 /* ─── Timing & Easing Constants ─────────────────────────────────────
    Sequence:
-   1. "Find" (0ms), "Your" (70ms), "Nearest" (140ms) rise up (700ms duration).
+   1. "Find" (0ms), "Your" (80ms), "Nearest" (160ms) slide up from behind
+      overflow-hidden mask (translateY 100% -> 0) over 700ms.
    2. "Charging Station" gradient fills left-to-right (550ms -> 1750ms = 1.2s).
-   3. Subtitle fades & rises 12px (starts at 1750ms).
-   4. Pill badge fades & rises 12px (starts at 1850ms, +100ms).
-   5. CTA button fades & rises 12px (starts at 1950ms, +100ms).
-   Total sequence finishes at 1950 + 300 = 2250ms ≈ 2.2s.
+   3. Subtext fades & rises (starts at 1750ms).
+   4. Pill badge fades & rises (starts at 1850ms, +100ms).
+   5. CTA button fades & rises (starts at 1950ms, +100ms).
+   Total sequence finishes at 1950 + 300 = 2250ms.
    ──────────────────────────────────────────────────────────────────── */
-const EASING = "cubic-bezier(0.22, 1, 0.36, 1)";
-const WORD_DURATION = 700;
-const WORD_STAGGER = 70;
+export const HEADLINE_DURATION = 700; // ms per word/line
+export const HEADLINE_STAGGER = 80; // ms stagger between elements
+export const HEADLINE_EASING = "cubic-bezier(0.22, 1, 0.36, 1)";
+
 const CHARGE_START = 550;
 const CHARGE_DURATION = 1200;
 const CHARGE_END = CHARGE_START + CHARGE_DURATION; // 1750ms
@@ -34,8 +36,8 @@ function RevealWord({ children, delayMs }: { children: ReactNode; delayMs: numbe
         className="hero-reveal-word"
         style={{
           animationDelay: `${delayMs}ms`,
-          animationDuration: `${WORD_DURATION}ms`,
-          animationTimingFunction: EASING,
+          animationDuration: `${HEADLINE_DURATION}ms`,
+          animationTimingFunction: HEADLINE_EASING,
         }}
       >
         {children}
@@ -56,7 +58,7 @@ function ChargingStation() {
         style={{
           animationDelay: `${CHARGE_START}ms`,
           animationDuration: `${CHARGE_DURATION}ms`,
-          animationTimingFunction: EASING,
+          animationTimingFunction: HEADLINE_EASING,
         }}
       >
         Charging Station
@@ -81,7 +83,7 @@ export function StaggerFade({
       style={{
         animationDelay: `${delayMs}ms`,
         animationDuration: "350ms",
-        animationTimingFunction: EASING,
+        animationTimingFunction: HEADLINE_EASING,
       }}
     >
       {children}
@@ -97,7 +99,7 @@ export function HeroHeadline() {
       aria-label="Find Your Nearest Charging Station"
     >
       {WORDS.map((word, i) => (
-        <RevealWord key={word} delayMs={i * WORD_STAGGER}>
+        <RevealWord key={word} delayMs={i * HEADLINE_STAGGER}>
           {word}
         </RevealWord>
       ))}{" "}
