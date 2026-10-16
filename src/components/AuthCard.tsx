@@ -432,8 +432,7 @@ export function AuthCard({ defaultTab = "login" }: AuthCardProps) {
                         value={loginEmail}
                         onChange={(e) => {
                           setLoginEmail(e.target.value);
-                          if (loginErrors.email)
-                            setLoginErrors((p) => ({ ...p, email: undefined }));
+                          if (loginErrors.email) setLoginErrors((p) => ({ ...p, email: "" }));
                         }}
                         className={`pl-9 rounded-xl ${loginErrors.email ? "border-destructive focus-visible:ring-destructive" : ""}`}
                         required
@@ -471,8 +470,7 @@ export function AuthCard({ defaultTab = "login" }: AuthCardProps) {
                         value={loginPassword}
                         onChange={(e) => {
                           setLoginPassword(e.target.value);
-                          if (loginErrors.password)
-                            setLoginErrors((p) => ({ ...p, password: undefined }));
+                          if (loginErrors.password) setLoginErrors((p) => ({ ...p, password: "" }));
                         }}
                         className={`pl-9 pr-10 rounded-xl ${loginErrors.password ? "border-destructive focus-visible:ring-destructive" : ""}`}
                         required
@@ -590,8 +588,7 @@ export function AuthCard({ defaultTab = "login" }: AuthCardProps) {
                         value={regFullName}
                         onChange={(e) => {
                           setRegFullName(e.target.value);
-                          if (regErrors.fullName)
-                            setRegErrors((p) => ({ ...p, fullName: undefined }));
+                          if (regErrors.fullName) setRegErrors((p) => ({ ...p, fullName: "" }));
                         }}
                         className={`pl-9 rounded-xl ${regErrors.fullName ? "border-destructive focus-visible:ring-destructive" : ""}`}
                         required
@@ -619,7 +616,7 @@ export function AuthCard({ defaultTab = "login" }: AuthCardProps) {
                         value={regEmail}
                         onChange={(e) => {
                           setRegEmail(e.target.value);
-                          if (regErrors.email) setRegErrors((p) => ({ ...p, email: undefined }));
+                          if (regErrors.email) setRegErrors((p) => ({ ...p, email: "" }));
                         }}
                         className={`pl-9 rounded-xl ${regErrors.email ? "border-destructive focus-visible:ring-destructive" : ""}`}
                         required
@@ -648,7 +645,7 @@ export function AuthCard({ defaultTab = "login" }: AuthCardProps) {
                           value={regPhone}
                           onChange={(e) => {
                             setRegPhone(e.target.value);
-                            if (regErrors.phone) setRegErrors((p) => ({ ...p, phone: undefined }));
+                            if (regErrors.phone) setRegErrors((p) => ({ ...p, phone: "" }));
                           }}
                           className={`pl-9 rounded-xl ${regErrors.phone ? "border-destructive focus-visible:ring-destructive" : ""}`}
                           required
@@ -752,8 +749,7 @@ export function AuthCard({ defaultTab = "login" }: AuthCardProps) {
                         value={regPassword}
                         onChange={(e) => {
                           setRegPassword(e.target.value);
-                          if (regErrors.password)
-                            setRegErrors((p) => ({ ...p, password: undefined }));
+                          if (regErrors.password) setRegErrors((p) => ({ ...p, password: "" }));
                         }}
                         className={`pl-9 pr-10 rounded-xl ${regErrors.password ? "border-destructive focus-visible:ring-destructive" : ""}`}
                         required
@@ -820,7 +816,7 @@ export function AuthCard({ defaultTab = "login" }: AuthCardProps) {
                         onChange={(e) => {
                           setRegConfirmPassword(e.target.value);
                           if (regErrors.confirmPassword)
-                            setRegErrors((p) => ({ ...p, confirmPassword: undefined }));
+                            setRegErrors((p) => ({ ...p, confirmPassword: "" }));
                         }}
                         className={`pl-9 pr-10 rounded-xl ${regErrors.confirmPassword ? "border-destructive focus-visible:ring-destructive" : ""}`}
                         required

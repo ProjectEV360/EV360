@@ -90,8 +90,9 @@ export function getRazorpayKey(): string {
     return envKey.trim();
   }
 
-  // Default Razorpay public test key format
-  return "rzp_test_1DP5mmOlF5G5ag";
+  // No key configured — warn and return empty (UI will prompt for manual entry)
+  console.warn("[Razorpay] No VITE_RAZORPAY_KEY_ID found in environment.");
+  return "";
 }
 
 /**

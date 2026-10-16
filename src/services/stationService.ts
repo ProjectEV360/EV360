@@ -196,15 +196,15 @@ export async function getProfile(userId: string): Promise<Profile | null> {
   try {
     const { data: authData } = await supabase.auth.getUser();
     if (authData?.user && authData.user.id === userId) {
-      const meta = authData.user.user_metadata || {};
+      const meta = (authData.user.user_metadata || {}) as Record<string, string | null | undefined>;
       profileData = {
         id: userId,
         email: authData.user.email ?? null,
-        full_name: meta.full_name ?? meta.name ?? null,
-        phone: meta.phone ?? authData.user.phone ?? null,
-        city: meta.city ?? null,
-        avatar_url: meta.avatar_url ?? meta.picture ?? null,
-        vehicle_id: meta.vehicle_id ?? null,
+        full_name: meta["full_name"] ?? meta["name"] ?? null,
+        phone: meta["phone"] ?? authData.user.phone ?? null,
+        city: meta["city"] ?? null,
+        avatar_url: meta["avatar_url"] ?? meta["picture"] ?? null,
+        vehicle_id: meta["vehicle_id"] ?? null,
         created_at: authData.user.created_at ?? null,
       };
     }
@@ -275,9 +275,6 @@ export async function saveProfile(p: Profile) {
     await supabase.from("profiles").upsert({
       id: p.id,
       full_name: p.full_name,
-      phone: p.phone,
-      city: p.city,
-      avatar_url: p.avatar_url,
       vehicle_id: p.vehicle_id,
     });
   } catch (err) {

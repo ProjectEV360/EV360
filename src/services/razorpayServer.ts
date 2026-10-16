@@ -48,11 +48,12 @@ const verifiedPayments = new Set<string>();
  * Key Secret is kept strictly server-side and never exposed to the client.
  */
 export function getRazorpayServerCredentials(): { keyId: string; keySecret: string } {
-  const keyId =
-    process.env["RAZORPAY_KEY_ID"] ||
-    process.env["VITE_RAZORPAY_KEY_ID"] ||
-    "rzp_test_1DP5mmOlF5G5ag";
+  const keyId = process.env["RAZORPAY_KEY_ID"] || process.env["VITE_RAZORPAY_KEY_ID"] || "";
   const keySecret = process.env["RAZORPAY_KEY_SECRET"] || "";
+
+  if (!keyId) {
+    console.warn("[Razorpay Server] No RAZORPAY_KEY_ID found in environment.");
+  }
 
   return { keyId: keyId.trim(), keySecret: keySecret.trim() };
 }
