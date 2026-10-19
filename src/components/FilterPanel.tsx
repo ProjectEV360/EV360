@@ -4,13 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SearchableVehicleSelect } from "@/components/SearchableVehicleSelect";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
@@ -24,7 +18,13 @@ interface FilterPanelProps {
   vehicles: Vehicle[];
 }
 
-function FilterContent({ filters, onChange, operators, vehicles }: FilterPanelProps) {
+function FilterContent({
+  filters,
+  onChange,
+  operators,
+  vehicles,
+  idPrefix = "",
+}: FilterPanelProps & { idPrefix?: string }) {
   const activeCount =
     filters.connectorTypes.length +
     (filters.minKw > 0 ? 1 : 0) +
@@ -50,11 +50,14 @@ function FilterContent({ filters, onChange, operators, vehicles }: FilterPanelPr
     <div className="space-y-6">
       {/* Available only */}
       <div className="flex items-center justify-between">
-        <Label htmlFor="available-only" className="text-sm font-medium">
+        <Label
+          htmlFor={idPrefix ? `${idPrefix}-available-only` : "available-only"}
+          className="text-sm font-medium"
+        >
           Available only
         </Label>
         <Switch
-          id="available-only"
+          id={idPrefix ? `${idPrefix}-available-only` : "available-only"}
           checked={filters.availableOnly}
           onCheckedChange={(v) => onChange({ ...filters, availableOnly: v })}
         />
@@ -90,7 +93,7 @@ function FilterContent({ filters, onChange, operators, vehicles }: FilterPanelPr
           Min Power: <span className="text-primary">{filters.minKw} kW</span>
         </h4>
         <Slider
-          id="min-power-slider"
+          id={idPrefix ? `${idPrefix}-min-power-slider` : "min-power-slider"}
           min={0}
           max={150}
           step={5}
@@ -126,30 +129,18 @@ function FilterContent({ filters, onChange, operators, vehicles }: FilterPanelPr
       )}
 
       {/* My vehicle */}
-      {vehicles.length > 0 && (
-        <div>
-          <h4 className="mb-2 flex items-center gap-1.5 text-sm font-medium">
-            <Car className="h-4 w-4 text-primary" />
-            My Vehicle
-          </h4>
-          <Select
-            value={filters.vehicleId ?? "none"}
-            onValueChange={(v) => onChange({ ...filters, vehicleId: v === "none" ? null : v })}
-          >
-            <SelectTrigger id="vehicle-filter-select" className="w-full">
-              <SelectValue placeholder="All vehicles" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">All vehicles</SelectItem>
-              {vehicles.map((v) => (
-                <SelectItem key={v.id} value={v.id}>
-                  {v.make} {v.model}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
+      <div>
+        <h4 className="mb-2 flex items-center gap-1.5 text-sm font-medium">
+          <Car className="h-4 w-4 text-primary" />
+          My Vehicle
+        </h4>
+        <SearchableVehicleSelect
+          id={idPrefix ? `${idPrefix}-vehicle-filter-select` : "vehicle-filter-select"}
+          value={filters.vehicleId}
+          onValueChange={(v) => onChange({ ...filters, vehicleId: v })}
+          vehicles={vehicles}
+        />
+      </div>
 
       {/* Reset */}
       {activeCount > 0 && (
@@ -211,7 +202,7 @@ export function FilterPanel(props: FilterPanelProps) {
               <SheetTitle>Filters</SheetTitle>
             </SheetHeader>
             <div className="mt-4">
-              <FilterContent {...props} />
+              <FilterContent {...props} idPrefix="mobile" />
             </div>
           </SheetContent>
         </Sheet>

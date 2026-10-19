@@ -35,6 +35,8 @@ export interface Vehicle {
   model: string;
   connector_types: string[];
   max_charge_kw: number;
+  brand?: string;
+  name?: string;
 }
 
 export interface StationFilters {
