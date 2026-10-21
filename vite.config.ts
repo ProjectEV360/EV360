@@ -13,6 +13,6 @@ export default defineConfig(({ command }) => ({
     react(),
     tailwindcss(),
     tsconfigPaths({ projects: ["./tsconfig.json"] }),
-    ...(command === "build" ? [nitro({ defaultPreset: "cloudflare-module" })] : []),
+    ...(command === "build" ? [nitro({ defaultPreset: "vercel" })] : []),
   ],
 }));
