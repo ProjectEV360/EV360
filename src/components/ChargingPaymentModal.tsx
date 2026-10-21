@@ -53,6 +53,7 @@ export function ChargingPaymentModal({
   const [selectedConnector, setSelectedConnector] = useState<Connector>(initialConnector);
   const [targetKwh, setTargetKwh] = useState<number>(25);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const [razorpayActive, setRazorpayActive] = useState<boolean>(false);
   const [completedSession, setCompletedSession] = useState<RazorpaySuccessResponse | null>(null);
   const [isCharging, setIsCharging] = useState<boolean>(false);
   const [chargingProgress, setChargingProgress] = useState<number>(20);
@@ -106,6 +107,8 @@ export function ChargingPaymentModal({
 
   const handleStartPayment = async () => {
     setIsProcessing(true);
+    // Hide the dialog so its focus trap doesn't block the Razorpay iframe
+    setRazorpayActive(true);
     try {
       await openRazorpayCheckout({
         amountInRupees: totalCost,
@@ -117,6 +120,7 @@ export function ChargingPaymentModal({
         userName: (user?.user_metadata?.["full_name"] as string | undefined) ?? null,
         onSuccess: (response) => {
           setIsProcessing(false);
+          setRazorpayActive(false);
           setCompletedSession(response);
           setIsCharging(true);
           setChargingProgress(25);
@@ -124,10 +128,12 @@ export function ChargingPaymentModal({
         },
         onDismiss: () => {
           setIsProcessing(false);
+          setRazorpayActive(false);
           toast.info("Payment window closed");
         },
         onError: (err) => {
           setIsProcessing(false);
+          setRazorpayActive(false);
           const message = err instanceof Error ? err.message : "Payment failed";
           toast.error(message);
           console.error("[Razorpay Error]", err);
@@ -135,6 +141,7 @@ export function ChargingPaymentModal({
       });
     } catch (err) {
       setIsProcessing(false);
+      setRazorpayActive(false);
       const message = err instanceof Error ? err.message : "Could not initialize Razorpay checkout";
       toast.error(message);
       console.error("[Razorpay Checkout Exception]", err);
@@ -185,7 +192,7 @@ export function ChargingPaymentModal({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open && !razorpayActive} onOpenChange={onOpenChange}>
       <DialogContent className="w-[calc(100vw-2rem)] sm:w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-2xl sm:rounded-3xl border-border/60 bg-card p-4 sm:p-6 shadow-2xl">
         <DialogHeader className="border-b border-border/50 pb-4">
           <div className="flex items-center justify-between">
