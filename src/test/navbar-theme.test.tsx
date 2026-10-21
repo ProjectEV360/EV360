@@ -72,11 +72,13 @@ describe("Navbar component", () => {
     expect(screen.getByText("Sign In")).toBeInTheDocument();
   });
 
-  it("renders profile link when user is logged in", () => {
+  it("renders profile link and hides Home button when user is logged in", () => {
     mockUser.mockReturnValue({ id: "user-123", email: "test@example.com" });
     render(<Navbar />);
 
     expect(screen.getByText("Favourites")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Map/i })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /Home/i })).toBeNull();
     expect(screen.queryByText("Sign In")).not.toBeInTheDocument();
   });
 

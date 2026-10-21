@@ -19,6 +19,8 @@ export function Navbar({ hideNavLinks = false }: NavbarProps = {}) {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  const navItems = NAV_ITEMS.filter((item) => !(user && item.to === "/"));
+
   const isActive = (path: string) =>
     path === "/" ? location.pathname === "/" : location.pathname.startsWith(path);
 
@@ -26,7 +28,12 @@ export function Navbar({ hideNavLinks = false }: NavbarProps = {}) {
     <header className="fixed inset-x-0 top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
       <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo */}
-        <Link to="/" className="flex items-center group py-1" id="nav-logo" aria-label="EV360 Home">
+        <Link
+          to={user ? "/map" : "/"}
+          className="flex items-center group py-1"
+          id="nav-logo"
+          aria-label={user ? "EV360 Map" : "EV360 Home"}
+        >
           <img
             src="/logo.png"
             alt="EV360 - One App. Every Charger."
@@ -42,7 +49,7 @@ export function Navbar({ hideNavLinks = false }: NavbarProps = {}) {
         {/* Desktop Nav */}
         {!hideNavLinks && (
           <div className="hidden items-center gap-1 md:flex">
-            {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
+            {navItems.map(({ to, label, icon: Icon }) => (
               <Link
                 key={to}
                 to={to}
@@ -118,7 +125,7 @@ export function Navbar({ hideNavLinks = false }: NavbarProps = {}) {
         <div className="border-t border-border/50 bg-background/95 backdrop-blur-xl md:hidden animate-in slide-in-from-top-2 duration-200">
           <div className="mx-auto max-w-7xl space-y-1 px-4 py-3">
             {!hideNavLinks &&
-              NAV_ITEMS.map(({ to, label, icon: Icon }) => (
+              navItems.map(({ to, label, icon: Icon }) => (
                 <Link
                   key={to}
                   to={to}
