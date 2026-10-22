@@ -42,7 +42,7 @@ export function StationCard({ station, isFav, onToggleFav, distance }: StationCa
         {/* Header row */}
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Badge
                 variant="secondary"
                 className={`shrink-0 text-[10px] font-semibold uppercase tracking-wider ${
@@ -55,6 +55,24 @@ export function StationCard({ station, isFav, onToggleFav, distance }: StationCa
               >
                 {STATUS_LABEL[status]}
               </Badge>
+              {station.is_home_charger ? (
+                <Badge
+                  variant="outline"
+                  className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 text-[10px] font-medium"
+                >
+                  🏠 Verified Home Host
+                </Badge>
+              ) : null}
+              {station.rating != null && station.rating > 0 && (
+                <span className="flex items-center gap-0.5 text-xs font-medium text-amber-500">
+                  ★ {station.rating.toFixed(1)}
+                  {station.total_reviews ? (
+                    <span className="text-[10px] text-muted-foreground">
+                      ({station.total_reviews})
+                    </span>
+                  ) : null}
+                </span>
+              )}
               {distance != null && (
                 <span className="text-xs text-muted-foreground">
                   {distance < 1 ? `${Math.round(distance * 1000)}m` : `${distance.toFixed(1)} km`}

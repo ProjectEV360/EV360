@@ -1,4 +1,4 @@
-import { Filter, X, Zap, Car } from "lucide-react";
+import { Filter, X, Zap, Car, Home, Building2 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -30,7 +30,8 @@ function FilterContent({
     (filters.minKw > 0 ? 1 : 0) +
     filters.operatorIds.length +
     (filters.availableOnly ? 1 : 0) +
-    (filters.vehicleId ? 1 : 0);
+    (filters.vehicleId ? 1 : 0) +
+    (filters.source && filters.source !== "all" ? 1 : 0);
 
   const toggleConnector = (t: string) => {
     const types = filters.connectorTypes.includes(t)
@@ -46,8 +47,55 @@ function FilterContent({
     onChange({ ...filters, operatorIds: ids });
   };
 
+  const currentSource = filters.source || "all";
+
   return (
     <div className="space-y-6">
+      {/* Charging Source (Public vs Home P2P) */}
+      <div>
+        <h4 className="mb-2.5 flex items-center gap-1.5 text-sm font-medium text-foreground">
+          <Building2 className="h-4 w-4 text-primary" />
+          Charging Network
+        </h4>
+        <div className="grid grid-cols-3 gap-1 rounded-xl bg-muted/60 p-1 border border-border/60">
+          <button
+            type="button"
+            onClick={() => onChange({ ...filters, source: "all" })}
+            className={`flex items-center justify-center gap-1 rounded-lg py-1.5 text-xs font-medium transition-all ${
+              currentSource === "all"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            All
+          </button>
+          <button
+            type="button"
+            onClick={() => onChange({ ...filters, source: "public" })}
+            className={`flex items-center justify-center gap-1 rounded-lg py-1.5 text-xs font-medium transition-all ${
+              currentSource === "public"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Building2 className="h-3 w-3 text-emerald-500" />
+            Public
+          </button>
+          <button
+            type="button"
+            onClick={() => onChange({ ...filters, source: "home" })}
+            className={`flex items-center justify-center gap-1 rounded-lg py-1.5 text-xs font-medium transition-all ${
+              currentSource === "home"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Home className="h-3 w-3 text-amber-500" />
+            Home P2P
+          </button>
+        </div>
+      </div>
+
       {/* Available only */}
       <div className="flex items-center justify-between">
         <Label

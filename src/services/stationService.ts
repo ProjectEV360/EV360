@@ -31,19 +31,57 @@ function mapStation(row: any): Station {
   };
 }
 
-export async function getStations(): Promise<Station[]> {
+import { getHomeChargers, getHomeChargerById, homeChargerToStation } from "./marketplaceService";
+
+async function safeWithTimeout<T>(promise: PromiseLike<T>, timeoutMs = 2500): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error("Request timed out")), timeoutMs);
+  });
+  return Promise.race([promise, timeoutPromise]).finally(() => {
+    if (timer) clearTimeout(timer);
+  });
+}
+
+export async function getStations(viewerId?: string): Promise<Station[]> {
+  let publicStations: Station[] = [];
   try {
-    const { data, error } = await supabase.from("stations").select(STATION_SELECT).order("name");
+    const { data, error } = await safeWithTimeout(
+      supabase.from("stations").select(STATION_SELECT).order("name"),
+    );
     if (!error && data && data.length > 0) {
-      return data.map(mapStation);
+      publicStations = data.map(mapStation);
+    } else {
+      publicStations = SEED_STATIONS;
     }
   } catch (err) {
     console.warn("Could not query stations table, using fallback data:", err);
+    publicStations = SEED_STATIONS;
   }
-  return SEED_STATIONS;
+
+  // Combine with marketplace peer-to-peer home chargers
+  try {
+    const homeChargers = await getHomeChargers(viewerId);
+    const homeStations = homeChargers.map(homeChargerToStation);
+    return [...publicStations, ...homeStations];
+  } catch (err) {
+    console.warn("Could not load marketplace home chargers:", err);
+    return publicStations;
+  }
 }
 
-export async function getStation(id: string): Promise<Station | null> {
+export async function getStation(id: string, viewerId?: string): Promise<Station | null> {
+  // 1. Check if ID corresponds to a marketplace home charger
+  try {
+    const homeCharger = await getHomeChargerById(id, viewerId);
+    if (homeCharger) {
+      return homeChargerToStation(homeCharger);
+    }
+  } catch (err) {
+    console.warn("Could not query home charger by ID:", err);
+  }
+
+  // 2. Query public stations
   try {
     const { data, error } = await supabase
       .from("stations")

@@ -206,15 +206,27 @@ export function StationGoogleMap({
       const status = stationStatus(s.connectors);
       const isSelected = s.id === selectedId;
 
+      const isHome = Boolean(s.is_home_charger);
       // Status color
-      const color =
-        status === "available" ? "#10b981" : status === "in_use" ? "#f59e0b" : "#ef4444";
+      const color = isHome
+        ? "#f59e0b"
+        : status === "available"
+          ? "#10b981"
+          : status === "in_use"
+            ? "#f59e0b"
+            : "#ef4444";
 
-      // Custom SVG Pin Marker
+      // Custom SVG Pin Marker (Home icon for P2P hosts, Lightning for commercial)
+      const innerSvgPath = isHome
+        ? '<path d="M17 9L8 16V24H14V18H20V24H26V16L17 9Z" fill="#ffffff"/>'
+        : '<path d="M18 9L11 18H16L15 25L23 15H18L18 9Z" fill="#ffffff"/>';
+
       const pinSvgRaw =
         '<svg xmlns="http://www.w3.org/2000/svg" width="34" height="42" viewBox="0 0 34 42"><path d="M17 0C7.61 0 0 7.61 0 17C0 27.2 14.5 40.5 15.6 41.5C16.4 42.2 17.6 42.2 18.4 41.5C19.5 40.5 34 27.2 34 17C34 7.61 26.39 0 17 0Z" fill="' +
         encodeURIComponent(color) +
-        '" stroke="#ffffff" stroke-width="2"/><circle cx="17" cy="16" r="10" fill="#ffffff" opacity="0.25"/><path d="M18 9L11 18H16L15 25L23 15H18L18 9Z" fill="#ffffff"/></svg>';
+        '" stroke="#ffffff" stroke-width="2"/><circle cx="17" cy="16" r="10" fill="#ffffff" opacity="0.25"/>' +
+        innerSvgPath +
+        "</svg>";
       const pinSvg = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(pinSvgRaw);
 
       const marker = new google.maps.Marker({

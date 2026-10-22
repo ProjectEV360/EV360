@@ -108,6 +108,62 @@ export default {
         );
       }
 
+      // Marketplace Booking: Create Order
+      if (url.pathname === "/api/marketplace/create-booking-order" && request.method === "POST") {
+        try {
+          const body = (await request.json()) as {
+            amountInRupees: number;
+            chargerTitle: string;
+            connectorType: string;
+            userEmail?: string;
+            userName?: string;
+            userPhone?: string;
+          };
+
+          const result = await createRazorpayOrder({
+            amountInRupees: body.amountInRupees,
+            stationName: body.chargerTitle,
+            connectorType: body.connectorType,
+            userEmail: body.userEmail,
+            userName: body.userName,
+            userPhone: body.userPhone,
+          });
+
+          return new Response(JSON.stringify(result), {
+            status: result.success ? 200 : 400,
+            headers: { "Content-Type": "application/json" },
+          });
+        } catch (err) {
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: err instanceof Error ? err.message : "Invalid JSON request",
+            }),
+            { status: 400, headers: { "Content-Type": "application/json" } },
+          );
+        }
+      }
+
+      // Marketplace Booking: Verify Payment
+      if (url.pathname === "/api/marketplace/verify-booking-payment" && request.method === "POST") {
+        try {
+          const body = (await request.json()) as VerifyPaymentParams;
+          const result = await verifyRazorpayPayment(body);
+          return new Response(JSON.stringify(result), {
+            status: result.success && result.verified ? 200 : 400,
+            headers: { "Content-Type": "application/json" },
+          });
+        } catch (err) {
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: err instanceof Error ? err.message : "Invalid JSON request",
+            }),
+            { status: 400, headers: { "Content-Type": "application/json" } },
+          );
+        }
+      }
+
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       return await normalizeCatastrophicSsrResponse(response);

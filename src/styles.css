@@ -202,6 +202,31 @@
   outline: 3px solid var(--primary);
   outline-offset: 2px;
 }
+/* Distinct Home Charger Marker */
+.ch-marker-home {
+  border-radius: 8px !important;
+  background: #f59e0b !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: #ffffff !important;
+  font-size: 13px !important;
+  box-shadow: 0 3px 10px rgba(245, 158, 11, 0.45) !important;
+}
+.ch-marker-home[data-status="available"] {
+  background: #f59e0b !important;
+}
+.ch-marker-home[data-status="in_use"] {
+  background: #d97706 !important;
+}
+.ch-marker-home[data-status="offline"] {
+  background: #6b7280 !important;
+}
+.ch-marker-home[data-active="true"] {
+  transform: scale(1.4) !important;
+  outline: 3px solid #f59e0b !important;
+  outline-offset: 2px !important;
+}
 .ch-cluster {
   display: flex;
   align-items: center;

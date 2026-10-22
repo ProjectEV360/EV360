@@ -12,19 +12,107 @@ import {
   removeFavourite,
 } from "@/services/stationService";
 
-export const useStations = () =>
+import {
+  getHomeChargers,
+  getHomeChargerById,
+  getMerchantProfile,
+  calculateHostEarnings,
+  getHostBookings,
+  getUserBookings,
+  getHostPayouts,
+  getAllPayouts,
+  getAllMerchantProfiles,
+  getAllBookings,
+  getBlockedSlots,
+} from "@/services/marketplaceService";
+
+export const useStations = (userId?: string) =>
   useQuery({
-    queryKey: ["stations"],
-    queryFn: getStations,
+    queryKey: ["stations", userId],
+    queryFn: () => getStations(userId),
     refetchInterval: 15000, // Dynamic background refresh every 15s
     refetchOnWindowFocus: true,
   });
-export const useStation = (id: string) =>
-  useQuery({ queryKey: ["station", id], queryFn: () => getStation(id) });
+export const useStation = (id: string, userId?: string) =>
+  useQuery({ queryKey: ["station", id, userId], queryFn: () => getStation(id, userId) });
 export const useOperators = () =>
   useQuery({ queryKey: ["operators"], queryFn: getOperators, staleTime: Infinity });
 export const useVehicles = () =>
   useQuery({ queryKey: ["vehicles"], queryFn: getVehicles, staleTime: Infinity });
+
+// ─── Marketplace Hooks ────────────────────────────────────────────────────────
+export const useHomeChargers = (userId?: string) =>
+  useQuery({
+    queryKey: ["home-chargers", userId],
+    queryFn: () => getHomeChargers(userId),
+  });
+
+export const useHomeCharger = (id: string, userId?: string) =>
+  useQuery({
+    queryKey: ["home-charger", id, userId],
+    queryFn: () => getHomeChargerById(id, userId),
+    enabled: !!id,
+  });
+
+export const useMerchantProfile = (userId?: string) =>
+  useQuery({
+    queryKey: ["merchant-profile", userId],
+    queryFn: () => getMerchantProfile(userId!),
+    enabled: !!userId,
+  });
+
+export const useHostEarnings = (hostId?: string) =>
+  useQuery({
+    queryKey: ["host-earnings", hostId],
+    queryFn: () => calculateHostEarnings(hostId!),
+    enabled: !!hostId,
+  });
+
+export const useHostBookings = (hostId?: string) =>
+  useQuery({
+    queryKey: ["host-bookings", hostId],
+    queryFn: () => getHostBookings(hostId!),
+    enabled: !!hostId,
+  });
+
+export const useUserBookings = (userId?: string) =>
+  useQuery({
+    queryKey: ["user-bookings", userId],
+    queryFn: () => getUserBookings(userId!),
+    enabled: !!userId,
+  });
+
+export const useHostPayouts = (hostId?: string) =>
+  useQuery({
+    queryKey: ["host-payouts", hostId],
+    queryFn: () => getHostPayouts(hostId!),
+    enabled: !!hostId,
+  });
+
+export const useBlockedSlots = (chargerId: string) =>
+  useQuery({
+    queryKey: ["blocked-slots", chargerId],
+    queryFn: () => getBlockedSlots(chargerId),
+    enabled: !!chargerId,
+  });
+
+export const useAllPayouts = () =>
+  useQuery({
+    queryKey: ["all-payouts"],
+    queryFn: getAllPayouts,
+  });
+
+export const useAllMerchantProfiles = () =>
+  useQuery({
+    queryKey: ["all-merchant-profiles"],
+    queryFn: getAllMerchantProfiles,
+  });
+
+export const useAllBookings = () =>
+  useQuery({
+    queryKey: ["all-bookings"],
+    queryFn: getAllBookings,
+  });
 
 export const useProfile = (userId?: string) =>
   useQuery({

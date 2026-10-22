@@ -33,8 +33,15 @@ export function connectorMatches(c: Connector, f: StationFilters) {
 
 export function filterStations(stations: Station[], f: StationFilters) {
   return stations.filter((s) => {
+    // 1. Source filter: all, public only, or home hosts only
+    if (f.source === "public" && s.is_home_charger) return false;
+    if (f.source === "home" && !s.is_home_charger) return false;
+
+    // 2. Operator filter
     if (f.operatorIds.length && (!s.operator || !f.operatorIds.includes(s.operator.id)))
       return false;
+
+    // 3. Connector matching
     return s.connectors?.some((c) => connectorMatches(c, f)) ?? false;
   });
 }

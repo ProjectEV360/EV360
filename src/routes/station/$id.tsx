@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/dialog";
 import { Navbar } from "@/components/Navbar";
 import { ChargingPaymentModal } from "@/components/ChargingPaymentModal";
+import { HomeChargerBookingModal } from "@/components/HomeChargerBookingModal";
 import { useStation, useFavouriteIds, useToggleFavourite } from "@/hooks/useChargeData";
 import { useAuth } from "@/hooks/useAuth";
 import { reportIssue } from "@/services/stationService";
@@ -374,13 +375,21 @@ function StationDetailPage() {
             </Dialog>
           </div>
 
-          {/* Razorpay Demo Payment Modal */}
-          <ChargingPaymentModal
-            open={paymentOpen}
-            onOpenChange={setPaymentOpen}
-            station={station}
-            preselectedConnectorId={selectedConnectorId}
-          />
+          {/* Payment / Booking Modal */}
+          {station.is_home_charger ? (
+            <HomeChargerBookingModal
+              open={paymentOpen}
+              onOpenChange={setPaymentOpen}
+              station={station}
+            />
+          ) : (
+            <ChargingPaymentModal
+              open={paymentOpen}
+              onOpenChange={setPaymentOpen}
+              station={station}
+              preselectedConnectorId={selectedConnectorId}
+            />
+          )}
         </div>
       </div>
     </div>

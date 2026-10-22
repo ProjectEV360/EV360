@@ -1,11 +1,24 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { Search, Navigation, Loader2, List, MapIcon, X } from "lucide-react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import {
+  Search,
+  Navigation,
+  Loader2,
+  List,
+  MapIcon,
+  X,
+  Zap,
+  ChevronRight,
+  Home,
+  ShieldCheck,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useState, lazy, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { Navbar } from "@/components/Navbar";
 import { StationCard } from "@/components/StationCard";
 import { FilterPanel } from "@/components/FilterPanel";
+import { HomeChargerBookingModal } from "@/components/HomeChargerBookingModal";
 import {
   useStations,
   useOperators,
@@ -14,8 +27,8 @@ import {
   useToggleFavourite,
 } from "@/hooks/useChargeData";
 import { useAuth } from "@/hooks/useAuth";
-import { filterStations, distanceKm } from "@/lib/station-utils";
-import { DEFAULT_FILTERS, type StationFilters } from "@/lib/types";
+import { filterStations, distanceKm, STATUS_LABEL } from "@/lib/station-utils";
+import { DEFAULT_FILTERS, type StationFilters, type Station } from "@/lib/types";
 import { geocode } from "@/services/stationService";
 import { toast } from "sonner";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -49,7 +62,7 @@ function ProtectedMapRoute() {
 
 function MapPage() {
   const { user } = useAuth();
-  const { data: stations, isLoading } = useStations();
+  const { data: stations, isLoading } = useStations(user?.id);
   const { data: operators = [] } = useOperators();
   const { data: vehicles = [] } = useVehicles();
   const { data: favIds = [] } = useFavouriteIds(user?.id);
@@ -59,6 +72,7 @@ function MapPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searching, setSearching] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [bookingModalStation, setBookingModalStation] = useState<Station | null>(null);
   const [userLocation, setUserLocation] = useState<{
     lat: number;
     lng: number;
@@ -151,6 +165,11 @@ function MapPage() {
     if (!userLocation) return filtered;
     return [...filtered].sort((a, b) => distanceKm(userLocation, a) - distanceKm(userLocation, b));
   }, [filtered, userLocation]);
+
+  const selectedStation = useMemo(
+    () => sorted.find((s) => s.id === selectedId) || null,
+    [sorted, selectedId],
+  );
 
   // Search handler
   const handleSearch = useCallback(async () => {
@@ -318,6 +337,104 @@ function MapPage() {
                     />
                   </Suspense>
                 )}
+
+                {/* Compact charger detail panel on map selection */}
+                {selectedStation && (
+                  <div className="absolute bottom-4 inset-x-4 sm:inset-x-auto sm:left-4 sm:w-96 z-20 rounded-2xl border border-border/80 bg-background/95 backdrop-blur-md p-4 shadow-xl transition-all duration-200 animate-in slide-in-from-bottom-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <Badge
+                            variant="secondary"
+                            className="text-[10px] uppercase font-semibold tracking-wider"
+                          >
+                            {STATUS_LABEL[selectedStation.connectors[0]?.status ?? "available"]}
+                          </Badge>
+                          {selectedStation.is_home_charger && (
+                            <Badge
+                              variant="outline"
+                              className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 text-[10px] font-medium"
+                            >
+                              🏠 Home Host
+                            </Badge>
+                          )}
+                          {selectedStation.rating != null && selectedStation.rating > 0 && (
+                            <span className="text-xs font-medium text-amber-500">
+                              ★ {selectedStation.rating.toFixed(1)}
+                            </span>
+                          )}
+                        </div>
+                        <h4 className="mt-1 font-display font-semibold text-sm text-foreground truncate">
+                          {selectedStation.name}
+                        </h4>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {selectedStation.address}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setSelectedId(null)}
+                        className="rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                        aria-label="Close details"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+
+                    <div className="mt-2.5 flex items-center justify-between text-xs text-muted-foreground border-t border-border/50 pt-2">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-foreground">
+                          {selectedStation.connectors[0]?.power_kw} kW
+                        </span>
+                        <span>•</span>
+                        <span>{selectedStation.connectors[0]?.type}</span>
+                        <span>•</span>
+                        <span className="text-primary font-semibold">
+                          ₹{selectedStation.connectors[0]?.price_per_kwh}/kWh
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 flex gap-2">
+                      {selectedStation.is_home_charger ? (
+                        <Button
+                          size="sm"
+                          className="flex-1 rounded-xl bg-gradient-primary shadow-glow text-primary-foreground text-xs font-semibold gap-1.5"
+                          onClick={() => setBookingModalStation(selectedStation)}
+                        >
+                          <Zap className="h-3.5 w-3.5" />
+                          Book Host Slot
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="flex-1 rounded-xl text-xs gap-1.5"
+                          asChild
+                        >
+                          <a
+                            href={`https://www.google.com/maps/dir/?api=1&destination=${selectedStation.lat},${selectedStation.lng}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <Navigation className="h-3.5 w-3.5" />
+                            Directions
+                          </a>
+                        </Button>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="rounded-xl text-xs gap-1"
+                        asChild
+                      >
+                        <Link to="/station/$id" params={{ id: selectedStation.id }}>
+                          Details
+                          <ChevronRight className="h-3.5 w-3.5" />
+                        </Link>
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -374,6 +491,14 @@ function MapPage() {
           </div>
         </div>
       </div>
+
+      {bookingModalStation && (
+        <HomeChargerBookingModal
+          open={Boolean(bookingModalStation)}
+          onOpenChange={(open) => !open && setBookingModalStation(null)}
+          station={bookingModalStation}
+        />
+      )}
     </div>
   );
 }

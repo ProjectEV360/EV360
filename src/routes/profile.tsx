@@ -12,10 +12,16 @@ import {
   Calendar,
   Camera,
   CheckCircle2,
+  Home,
+  ShieldCheck,
+  Zap,
+  Navigation,
+  ArrowRight,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -33,7 +39,10 @@ import {
   useFavouriteStations,
   useFavouriteIds,
   useToggleFavourite,
+  useMerchantProfile,
+  useUserBookings,
 } from "@/hooks/useChargeData";
+import { cancelMarketplaceBooking } from "@/services/marketplaceService";
 import { useAuth } from "@/hooks/useAuth";
 import { saveProfile } from "@/services/stationService";
 import { supabase } from "@/integrations/supabase/client";
@@ -85,6 +94,8 @@ function ProfilePage() {
   const { data: favStations = [], isLoading: favsLoading } = useFavouriteStations(user?.id);
   const { data: favIds = [] } = useFavouriteIds(user?.id);
   const toggleFav = useToggleFavourite(user?.id);
+  const { data: merchantProfile } = useMerchantProfile(user?.id);
+  const { data: userBookings = [], refetch: refetchUserBookings } = useUserBookings(user?.id);
 
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
@@ -194,16 +205,34 @@ function ProfilePage() {
               Manage your EV360 account details, vehicle preferences, and saved chargers.
             </p>
           </div>
-          <Button
-            id="sign-out-btn"
-            variant="outline"
-            size="sm"
-            className="gap-2 rounded-full border-destructive/30 text-destructive transition-colors hover:bg-destructive hover:text-destructive-foreground"
-            onClick={handleSignOut}
-          >
-            <LogOut className="h-4 w-4" />
-            Sign Out
-          </Button>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              size="sm"
+              className="gap-2 rounded-full bg-gradient-primary shadow-glow text-primary-foreground font-semibold"
+              asChild
+            >
+              <Link to="/merchant">
+                <Home className="h-4 w-4" />
+                {merchantProfile ? "Host Dashboard" : "Become a Host"}
+              </Link>
+            </Button>
+            <Button variant="outline" size="sm" className="gap-1.5 rounded-full" asChild>
+              <Link to="/admin">
+                <ShieldCheck className="h-4 w-4 text-primary" />
+                Admin
+              </Link>
+            </Button>
+            <Button
+              id="sign-out-btn"
+              variant="outline"
+              size="sm"
+              className="gap-2 rounded-full border-destructive/30 text-destructive transition-colors hover:bg-destructive hover:text-destructive-foreground"
+              onClick={handleSignOut}
+            >
+              <LogOut className="h-4 w-4" />
+              Sign Out
+            </Button>
+          </div>
         </div>
 
         <div className="mt-8 grid gap-8 lg:grid-cols-12">
@@ -487,6 +516,143 @@ function ProfilePage() {
                     }
                   />
                 ))
+              )}
+            </div>
+
+            {/* My Home Charger Bookings */}
+            <div className="mt-8 space-y-3">
+              <div className="flex items-center justify-between">
+                <h2 className="flex items-center gap-2 font-display text-xl font-semibold text-foreground">
+                  <Zap className="h-5 w-5 text-amber-500" />
+                  My Charger Bookings
+                </h2>
+                {userBookings.length > 0 && (
+                  <span className="rounded-full bg-amber-500/10 px-2.5 py-0.5 text-xs font-semibold text-amber-500">
+                    {userBookings.length}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Your reservations at verified peer-to-peer home chargers
+              </p>
+
+              {userBookings.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-border bg-card/50 p-6 text-center shadow-card">
+                  <Home className="mx-auto h-8 w-8 text-muted-foreground/40" />
+                  <p className="mt-2 text-xs font-semibold text-foreground">No bookings yet</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    Discover and reserve private home chargers on the map.
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-3 gap-1 rounded-full text-xs"
+                    asChild
+                  >
+                    <Link to="/map">
+                      <Zap className="h-3.5 w-3.5 text-primary" />
+                      Find Chargers
+                    </Link>
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {userBookings.map((b) => (
+                    <div
+                      key={b.id}
+                      className="rounded-2xl border border-border/60 bg-card p-4 shadow-card space-y-2.5"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-xs font-bold text-primary">
+                              {b.booking_ref}
+                            </span>
+                            <Badge
+                              variant="secondary"
+                              className={`text-[10px] uppercase font-semibold ${
+                                b.status === "confirmed"
+                                  ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                                  : "bg-muted text-muted-foreground"
+                              }`}
+                            >
+                              {b.status}
+                            </Badge>
+                          </div>
+                          <p className="text-xs font-semibold text-foreground mt-0.5">
+                            {b.charger?.title || "Home EV Charger"}
+                          </p>
+                        </div>
+                        <span className="text-sm font-bold text-foreground">
+                          ₹{b.total_amount.toFixed(2)}
+                        </span>
+                      </div>
+
+                      <div className="text-[11px] text-muted-foreground space-y-1 bg-muted/40 p-2.5 rounded-xl border border-border/50">
+                        <p className="flex items-center gap-1 font-medium text-foreground">
+                          <Calendar className="h-3 w-3 text-primary" />
+                          {new Date(b.start_time).toLocaleString([], {
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </p>
+                        {b.access_revealed && b.charger?.address_full && (
+                          <p className="text-xs text-foreground font-medium flex items-start gap-1 pt-1">
+                            <MapPin className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
+                            <span>{b.charger.address_full}</span>
+                          </p>
+                        )}
+                        {b.access_revealed && b.charger?.access_instructions && (
+                          <p className="text-[10px] text-muted-foreground italic">
+                            Access: {b.charger.access_instructions}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="flex items-center justify-between pt-1">
+                        {b.charger && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs rounded-lg gap-1"
+                            asChild
+                          >
+                            <a
+                              href={`https://www.google.com/maps/dir/?api=1&destination=${b.charger.lat},${b.charger.lng}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <Navigation className="h-3 w-3" />
+                              Directions
+                            </a>
+                          </Button>
+                        )}
+                        {b.status === "confirmed" && (
+                          <button
+                            onClick={async () => {
+                              const res = await cancelMarketplaceBooking(
+                                b.id,
+                                "user",
+                                "Driver requested cancellation",
+                              );
+                              if (res.success) {
+                                toast.success(res.message);
+                                refetchUserBookings();
+                              } else {
+                                toast.error(res.message);
+                              }
+                            }}
+                            className="text-xs text-destructive hover:underline font-medium"
+                          >
+                            Cancel Reservation
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
           </div>

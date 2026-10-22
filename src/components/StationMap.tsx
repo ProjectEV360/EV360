@@ -154,11 +154,12 @@ export function StationMap({
 
     stations.forEach((s) => {
       const status = stationStatus(s.connectors);
+      const isHome = Boolean(s.is_home_charger);
       const marker = L.marker([s.lat, s.lng], {
         icon: L.divIcon({
-          className: "ch-marker",
+          className: isHome ? "ch-marker ch-marker-home" : "ch-marker",
           iconSize: [26, 26],
-          html: `<div class="ch-marker" data-status="${status}" data-active="${s.id === selectedId}"></div>`,
+          html: `<div class="ch-marker ${isHome ? "ch-marker-home" : ""}" data-status="${status}" data-active="${s.id === selectedId}">${isHome ? "🏠" : ""}</div>`,
         }),
       });
 

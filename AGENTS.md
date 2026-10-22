@@ -8,3 +8,4 @@ This repository contains ChargeHub, an EV charging station locator and slot rese
 - **Formatting**: `npm run format`
 - **Linting**: `npm run lint`
 - **Testing**: `npm run test`
+- **Git / GitHub**: Do NOT commit or push anything to GitHub unless explicitly instructed by the user.
